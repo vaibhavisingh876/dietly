@@ -78,20 +78,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section style={{ background: 'linear-gradient(135deg, #16a34a 0%, #10b981 50%, #14b8a6 100%)', padding: '120px 50px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '64px', fontWeight: 'bold', color: 'white', marginBottom: '24px', lineHeight: '1.2' }}>
-            Welcome to Dietly
-          </h1>
-          <p style={{ fontSize: '28px', color: '#dcfce7', marginBottom: '40px', lineHeight: '1.6' }}>
-            Feed Your Ambition, Not Just Your Appetite
-          </p>
-          <p style={{ fontSize: '20px', color: '#f0fdf4', maxWidth: '800px', margin: '0 auto', lineHeight: '1.8' }}>
-            Transform your eating habits with intelligent tracking, personalized insights, and a supportive community. Start your journey to better health today.
-          </p>
-        </div>
-      </section>
+
 
       {/* About Section */}
       <section id="about" style={{ padding: '100px 50px', backgroundColor: '#f9fafb' }}>

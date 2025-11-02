@@ -16,7 +16,7 @@ export default function ModernNavbar() {
 
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-    { name: 'Analyze', href: '/analyze', icon: Search },
+    
     { name: 'Pantry', href: '/pantry', icon: ChefHat },
   ];
 
@@ -27,7 +27,7 @@ export default function ModernNavbar() {
     window.location.href = href;
   };
 
-  
+
   return (
     <>_
       {/* Floating Navbar */}
