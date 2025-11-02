@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, MapPin } from 'lucide-react';
 
@@ -10,11 +11,14 @@ export default function SignupPage() {
     country: ''
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
+  const navigate = useNavigate();
+const handleSubmit = (e) => {
+  e.preventDefault();
+  console.log("Form submitted:", formData);
 
+
+  navigate("/questionnaire");
+};
   const handleChange = (e) => {
     setFormData({
       ...formData,
