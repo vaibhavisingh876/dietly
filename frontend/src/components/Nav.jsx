@@ -99,14 +99,11 @@ export default function ModernNavbar() {
                 href="/register"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = '/register';
+                  window.location.href = '/login';
                 }}
-                className="relative px-6 py-2.5 rounded-full font-bold text-white overflow-hidden group"
+                className="px-5 py-2.5 rounded-full font-semibold text-green-700 hover:bg-green-50 transition-all"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-700 group-hover:from-green-700 group-hover:to-green-800 transition-all"></div>
-                <span className="relative flex items-center gap-2">
-                  Register
-                </span>
+                Register
               </a>
             </div>
 

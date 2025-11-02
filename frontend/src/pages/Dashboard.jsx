@@ -61,23 +61,7 @@ export default function DashboardPage() {
   return (
     <div style={{ width: '100vw', minHeight: '100vh', margin: 0, padding: 0, backgroundColor: '#ffffff' }}>
       {/* Navigation Bar */}
-      <nav style={{ width: '100%', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '20px 50px', position: 'sticky', top: 0, zIndex: 1000 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Leaf style={{ width: '32px', height: '32px', color: '#16a34a' }} />
-            <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827' }}>Dietly</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-            <a href="#about" style={{ color: '#374151', fontWeight: '500', fontSize: '16px', textDecoration: 'none' }}>About</a>
-            <a href="#features" style={{ color: '#374151', fontWeight: '500', fontSize: '16px', textDecoration: 'none' }}>Features</a>
-            <a href="#team" style={{ color: '#374151', fontWeight: '500', fontSize: '16px', textDecoration: 'none' }}>Team</a>
-            <button style={{ padding: '10px 24px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '16px', cursor: 'pointer' }}>
-              Get Started
-            </button>
-          </div>
-        </div>
-      </nav>
-
+      
 
 
       {/* About Section */}
