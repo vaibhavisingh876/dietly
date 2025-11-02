@@ -1,24 +1,26 @@
-import { useNavigate } from "react-router-dom";
 import React, { useState } from 'react';
-import { Eye, EyeOff, User, Mail, Lock, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Leaf, Sparkles } from 'lucide-react';
 
-export default function SignupPage() {
+export default function DietlyRegister() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    country: ''
+    confirmPassword: ''
   });
 
-  const navigate = useNavigate();
-const handleSubmit = (e) => {
-  e.preventDefault();
-  console.log("Form submitted:", formData);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+    // Navigate to questionnaire
+    window.location.href = '/Questionnaire';
+  };
 
-
-  navigate("/questionnaire");
-};
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -26,198 +28,193 @@ const handleSubmit = (e) => {
     });
   };
 
+  const handleSocialLogin = (provider) => {
+    console.log(`Login with ${provider}`);
+    // Implement social login logic
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-6xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        
-        {/* Left Section - Form */}
-        <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
-          {/* Logo */}
-          <div className="mb-8">
-            <div className="flex items-center justify-center lg:justify-start">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white text-3xl font-bold">D</span>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-green-50 flex overflow-y-auto">
+      <div className="w-full flex">
+        {/* Left Side - Branding */}
+        <div className="flex-1 flex flex-col justify-center px-12 lg:px-20">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-4 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-full shadow-sm mb-8">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-green-500 rounded-full flex items-center justify-center">
+                <Leaf className="w-6 h-6 text-white" />
               </div>
-              <div className="ml-3">
-                <h1 className="text-2xl font-bold text-gray-800">Dietly</h1>
-                <p className="text-sm text-gray-500">Healthy Recipes</p>
+              <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-green-600 bg-clip-text text-transparent">
+                Dietly
+              </span>
+            </div>
+            
+            <h1 className="text-5xl font-bold text-gray-800 leading-tight mb-6">
+              Your Personal Meal Companion
+            </h1>
+            
+            <p className="text-lg text-gray-600 mb-8">
+              Dietly is designed to make healthy eating effortless and smart. Understand what's really on your plate with AI-powered insights into nutritional value and overall health impact.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-lg shadow-sm">
+                <Sparkles className="w-5 h-5 text-teal-500" />
+                <span className="text-sm font-medium text-gray-700">AI-Powered Analysis</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-lg shadow-sm">
+                <Leaf className="w-5 h-5 text-green-500" />
+                <span className="text-sm font-medium text-gray-700">Smart Nutrition</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Input */}
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                name="name"
-                placeholder="Irshad Ahmed"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-              />
+        {/* Right Side - Registration Form */}
+        <div className="w-full max-w-xl bg-white shadow-2xl flex flex-col justify-center px-12 py-16">
+          <div className="w-full space-y-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-800">Create Account</h2>
+              <p className="text-gray-600 mt-2">Start your healthy eating journey today</p>
             </div>
 
-            {/* Email Input */}
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter Email Address"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-              />
-            </div>
-
-            {/* Password Input */}
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-              />
+            {/* Social Login Buttons */}
+            <div className="space-y-3">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => handleSocialLogin('Google')}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-teal-500 hover:bg-teal-50 transition-all duration-200 font-medium text-gray-700"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+              </button>
+
+              <button
+                onClick={() => handleSocialLogin('Apple')}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-xl hover:border-teal-500 hover:bg-teal-50 transition-all duration-200 font-medium text-gray-700"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+                Continue with Apple
               </button>
             </div>
 
-            {/* Country Input */}
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                name="country"
-                placeholder="Select your country"
-                value={formData.country}
-                onChange={handleChange}
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-              />
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Or register with email</span>
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-green-700 transform hover:-translate-y-0.5 transition-all duration-200"
-            >
-              CREATE ACCOUNT
-            </button>
+            {/* Registration Form */}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                  placeholder="John Doe"
+                />
+              </div>
 
-            {/* Terms */}
-            <p className="text-center text-xs text-gray-500 mt-4">
-              By clicking on "Create Account" you are agreeing to the{' '}
-              <a href="#" className="text-emerald-600 hover:underline">Terms of Service</a> and the{' '}
-              <a href="#" className="text-emerald-600 hover:underline">Privacy Policy</a>.
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all pr-12"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all pr-12"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-gradient-to-r from-teal-500 to-green-500 text-white font-semibold py-3 px-4 rounded-xl hover:from-teal-600 hover:to-green-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Create Account
+              </button>
+            </div>
+
+            <p className="text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <a href="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
+                Login here
+              </a>
             </p>
 
-            {/* Social Login */}
-            <div className="mt-6">
-              <p className="text-center text-sm text-gray-500 mb-4">Join with</p>
-              <div className="flex justify-center space-x-4">
-                <button type="button" className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition shadow-md">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </button>
-                <button type="button" className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 text-white rounded-full flex items-center justify-center hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 transition shadow-md">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
-                </button>
-                <button type="button" className="w-12 h-12 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500 transition shadow-md">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* Right Section - Benefits */}
-        <div className="w-full lg:w-1/2 bg-gradient-to-br from-emerald-50 to-green-50 p-8 lg:p-12 flex flex-col justify-center relative overflow-hidden">
-          {/* Decorative Elements */}
-          <div className="absolute top-10 right-10 w-32 h-32 bg-emerald-200 rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute bottom-10 left-10 w-40 h-40 bg-green-200 rounded-full opacity-20 blur-3xl"></div>
-
-          <div className="relative z-10">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-4">Create Account</h2>
-            <p className="text-xl text-gray-600 mb-8">What you will get?</p>
-
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="mt-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-gray-700">Manage your recipes the easy way</p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="mt-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-gray-700">Share recipes with your friends and discover new ones</p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="mt-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-gray-700">More than 15,000 recipes from around the world!</p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="mt-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-gray-700">Organize recipes by tag, share it with your friends</p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="mt-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-                <p className="text-gray-700">Invite your friends to join and start sharing your recipes in a flash</p>
-              </div>
-            </div>
-
-            {/* Decorative Food Image Placeholder */}
-            <div className="mt-8 relative">
-              <div className="w-48 h-48 bg-white rounded-full shadow-xl mx-auto flex items-center justify-center">
-                <div className="text-6xl">🥗</div>
-              </div>
-              <div className="absolute -top-4 -right-4 w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center">
-                <div className="text-3xl">🥑</div>
-              </div>
-              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center">
-                <div className="text-2xl">🥦</div>
-              </div>
-            </div>
+            <p className="text-center text-xs text-gray-500 pt-2">
+              By creating an account, you agree to our Terms of Service and Privacy Policy
+            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 px-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
-          <div className="flex space-x-6 mb-2 sm:mb-0">
-            <a href="#" className="hover:text-emerald-600 transition">Explore</a>
-            <a href="#" className="hover:text-emerald-600 transition">What</a>
-            <a href="#" className="hover:text-emerald-600 transition">Help & Feedback</a>
-            <a href="#" className="hover:text-emerald-600 transition">Contact</a>
-          </div>
-          <p className="text-xs text-gray-500">2025 company. All rights and copy rights reserved.</p>
         </div>
       </div>
     </div>
