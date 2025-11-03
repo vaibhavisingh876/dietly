@@ -19,14 +19,16 @@ export default function App() {
       <Nav />
       <div className="w-full">
 
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/pantry" element={<Pantry />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/questionnaire" element={<Questionnaire />} />
-        </Routes>
+     <Routes>
+  <Route path="/" element={<Dashboard />} />
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/analyze" element={<Analyze />} />
+  <Route path="/pantry" element={<Pantry />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/questionnaire" element={<Questionnaire />} />
+  </Routes>
+
       </div>
     </div>
   )

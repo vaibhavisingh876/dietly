@@ -1,5 +1,5 @@
 import React from 'react';
-import { Leaf, Apple, TrendingUp, Users, Target, BarChart3, Heart, Calendar, User } from 'lucide-react';
+import { Leaf, Apple, TrendingUp, Users, Target, BarChart3, Heart, Calendar, User, Sparkles } from 'lucide-react';
 import Nav from "../components/Nav"; // Import your navbar
 
 export default function DashboardPage() {
@@ -60,8 +60,199 @@ export default function DashboardPage() {
       {/* Navigation Bar - Pass currentPage prop */}
       <Nav currentPage="Dashboard" />
 
-      {/* Spacer for fixed navbar */}
-      <div style={{ height: '100px' }}></div>
+      {/* NEW: Welcome Hero Section */}
+      <section style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Animated background elements */}
+        <div style={{
+          position: 'absolute',
+          width: '400px',
+          height: '400px',
+          background: 'radial-gradient(circle, rgba(22, 163, 74, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          top: '-100px',
+          right: '-100px',
+          animation: 'float 6s ease-in-out infinite'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          bottom: '-50px',
+          left: '-50px',
+          animation: 'float 8s ease-in-out infinite reverse'
+        }}></div>
+
+        <style>
+          {`
+            @keyframes float {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-30px); }
+            }
+            @keyframes fadeInUp {
+              from {
+                opacity: 0;
+                transform: translateY(30px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            @keyframes sparkle {
+              0%, 100% { opacity: 0.3; transform: scale(0.8); }
+              50% { opacity: 1; transform: scale(1.2); }
+            }
+
+          `}
+        </style>
+
+        <div style={{ 
+          textAlign: 'center', 
+          maxWidth: '900px', 
+          padding: '0 20px',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          {/* Logo with sparkle effect */}
+          <div style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '16px',
+            marginBottom: '32px',
+            animation: 'fadeInUp 1s ease-out'
+          }}>
+            <div style={{ position: 'relative' }}>
+              <Leaf style={{ 
+                width: '80px', 
+                height: '80px', 
+                color: '#16a34a',
+                filter: 'drop-shadow(0 4px 12px rgba(22, 163, 74, 0.3))'
+              }} />
+              <Sparkles style={{
+                width: '24px',
+                height: '24px',
+                color: '#16a34a',
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                animation: 'sparkle 2s ease-in-out infinite'
+              }} />
+            </div>
+          </div>
+
+          {/* Main Heading */}
+          <h1 style={{ 
+            fontSize: '72px', 
+            fontWeight: 'bold', 
+            color: '#111827',
+            marginBottom: '24px',
+            lineHeight: '1.1',
+            animation: 'fadeInUp 1s ease-out 0.2s both',
+            textShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          }}>
+            Welcome to <span style={{ 
+              background: 'linear-gradient(135deg, #16a34a 0%, #10b981 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>Dietly</span>
+          </h1>
+
+          {/* Tagline */}
+          <p style={{ 
+            fontSize: '28px', 
+            color: '#374151',
+            fontWeight: '500',
+            marginBottom: '48px',
+            animation: 'fadeInUp 1s ease-out 0.4s both',
+            letterSpacing: '0.5px'
+          }}>
+            Feed Your Ambition, Not Just Your Appetite.
+          </p>
+
+          {/* Subtitle */}
+          <p style={{ 
+            fontSize: '18px', 
+            color: '#6b7280',
+            maxWidth: '700px',
+            margin: '0 auto 48px',
+            lineHeight: '1.8',
+            animation: 'fadeInUp 1s ease-out 0.6s both'
+          }}>
+            Your personal meal companion designed to make healthy eating effortless and smart. 
+            Track, analyze, and transform your eating habits with AI-powered insights.
+          </p>
+
+          {/* CTA Buttons */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            justifyContent: 'center',
+            animation: 'fadeInUp 1s ease-out 0.8s both'
+          }}>
+            <button 
+              onClick={() => {
+                document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+              padding: '16px 40px',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: 'white',
+              background: 'linear-gradient(135deg, #16a34a 0%, #10b981 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              boxShadow: '0 10px 25px rgba(22, 163, 74, 0.3)',
+              transition: 'all 0.3s ease',
+              transform: 'translateY(0)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-3px)';
+              e.currentTarget.style.boxShadow = '0 15px 35px rgba(22, 163, 74, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 10px 25px rgba(22, 163, 74, 0.3)';
+            }}>
+              Get Started
+            </button>
+            
+            <button style={{
+              padding: '16px 40px',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#16a34a',
+              background: 'white',
+              border: '2px solid #16a34a',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f0fdf4';
+              e.currentTarget.style.transform = 'translateY(-3px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}>
+              Learn More
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* About Section */}
       <section id="about" style={{ padding: '100px 50px', backgroundColor: '#f9fafb' }}>
