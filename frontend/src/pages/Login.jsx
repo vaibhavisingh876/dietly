@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react';
+import Nav from '../components/Nav';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -29,16 +30,12 @@ export default function LoginPage() {
           <Leaf className="w-7 h-7 text-green-600" />
           <span className="text-xl font-bold text-green-700">Dietly</span>
         </div>
-        <div className="flex gap-8 text-gray-700">
-          <a href="#" className="hover:text-green-500">Home</a>
-          <a href="#" className="hover:text-green-500">About</a>
-          <a href="#" className="hover:text-green-500">Contact</a>
-          <a href="#" className="hover:text-green-500 font-semibold">Login</a>
-        </div>
+       
       </nav>
 
       {/* Main Layout */}
-      <main className="flex flex-col lg:flex-row w-full max-w-6xl mx-auto mt-28 py-12 px-4 flex-1 bg-white border rounded-lg shadow">
+      <main className="flex flex-col lg:flex-row w-full mt-28 py-12 px-12 flex-1 bg-white">
+
         {/* Left Info Section */}
         <div className="flex-1 pr-12 hidden lg:flex flex-col justify-center">
           <div className="bg-green-50 rounded-lg p-12 shadow flex flex-col items-center">
