@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 export default function ModernNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState('Home');
   const location = useLocation();
 
   // Detect current route and set active tab
@@ -14,7 +14,7 @@ export default function ModernNavbar() {
     if (path.includes('/pantry')) setActiveTab('Pantry');
     else if (path.includes('/login')) setActiveTab('Login');
     else if (path.includes('/register')) setActiveTab('Register');
-    else setActiveTab('Dashboard');
+    else setActiveTab('Home');
   }, [location]);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function ModernNavbar() {
   }, []);
 
   const navLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+    { name: 'Home', href: '/Home', icon: BarChart3 },
     { name: 'Pantry', href: '/pantry', icon: ChefHat },
   ];
 

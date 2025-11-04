@@ -4,7 +4,7 @@ import { Routes, Route } from 'react-router-dom'
 import Nav from './components/Nav'
 
 // Pages
-import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 import Analyze from './pages/Analyze'
 import Pantry from './pages/Pantry'
 import Login from './pages/Login'
@@ -20,8 +20,8 @@ export default function App() {
       <div className="w-full">
 
      <Routes>
-  <Route path="/" element={<Dashboard />} />
-  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/Home" element={<Home/>} />
+  <Route path="/Home" element={<Home />} />
   <Route path="/analyze" element={<Analyze />} />
   <Route path="/pantry" element={<Pantry />} />
   <Route path="/login" element={<Login />} />

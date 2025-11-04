@@ -2,12 +2,12 @@ import React from 'react';
 import { Leaf, Apple, TrendingUp, Users, Target, BarChart3, Heart, Calendar, User, Sparkles } from 'lucide-react';
 import Nav from "../components/Nav"; // Import your navbar
 
-export default function DashboardPage() {
+export default function HomePage() {
   const features = [
     {
       icon: <Apple className="w-8 h-8" />,
       title: "Smart Meal Analysis",
-      description: "Get instant nutritional and health insights for every meal you log — powered by AI."
+      description: "Get instant nutritional and health insights for every meal you log powered by AI."
     },
     {
       icon: <TrendingUp className="w-8 h-8" />,
@@ -32,7 +32,7 @@ export default function DashboardPage() {
     {
       icon: <Calendar className="w-8 h-8" />,
       title: "AI-Driven Health Insights",
-      description: "Go beyond calorie counts — understand the true nutritional impact of your food."
+      description: "Go beyond calorie counts understand the true nutritional impact of your food."
     }
   ];
 
@@ -58,7 +58,7 @@ export default function DashboardPage() {
   return (
     <div style={{ width: '100vw', minHeight: '100vh', margin: 0, padding: 0, backgroundColor: '#ffffff' }}>
       {/* Navigation Bar - Pass currentPage prop */}
-      <Nav currentPage="Dashboard" />
+      <Nav currentPage="Home" />
 
       {/* NEW: Welcome Hero Section */}
       <section style={{ 
@@ -265,15 +265,16 @@ export default function DashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '18px', color: '#374151', lineHeight: '1.8', marginBottom: '24px' }}>
-                Dietly is your personal meal companion designed to make healthy eating effortless and smart. It helps you understand what's really on your plate by analyzing your meals and giving you clear, AI-powered insights into their nutritional value and overall health impact..
+                Dietly is your personal meal companion designed to make healthy eating effortless and smart. It helps you understand what's really on your plate by analyzing your meals and giving you clear, AI-powered insights into their nutritional value and overall health impact.
               </p>
               <p style={{ fontSize: '18px', color: '#374151', lineHeight: '1.8', marginBottom: '24px' }}>
-                It encourages you to stay consistent with your eating goals through daily streaks that celebrate your progress and keep you motivated. Each time you log your meals, you not only track your food — you track your journey toward better habits.
+                It encourages you to stay consistent with your eating goals through daily streaks that celebrate your progress and keep you motivated. Each time you log your meals, you not only track your food you track your journey toward better habits.
 
               </p>
               <p style={{ fontSize: '18px', color: '#374151', lineHeight: '1.8' }}>
-                Whether you're focused on fitness, wellness, or simply mindful eating, Dietly makes it easier to stay informed, balanced, and consistent. It's more than just a tracker — it's your guide to building a healthier relationship with food.
+                Whether you're focused on fitness, wellness, or simply mindful eating, Dietly makes it easier to stay informed, balanced, and consistent. It's more than just a tracker it's your guide to building a healthier relationship with food.
               </p>
+              
             </div>
             <div style={{ backgroundColor: 'white', borderRadius: '20px', padding: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
               <div style={{ marginBottom: '30px' }}>
