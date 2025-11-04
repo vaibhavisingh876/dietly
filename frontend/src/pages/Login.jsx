@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react';
-import Nav from '../components/Nav';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -22,20 +23,22 @@ export default function LoginPage() {
     }
   };
 
+  const handleCreateAccount = () => {
+    navigate('/register');
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Navbar */}
-      <nav className="w-full px-10 py-4 flex items-center justify-between bg-white shadow-sm fixed top-0 left-0 z-20">
+      <nav className="w-full px-10 py-4 flex items-center justify-between bg-white shadow-sm">
         <div className="flex items-center gap-3">
           <Leaf className="w-7 h-7 text-green-600" />
           <span className="text-xl font-bold text-green-700">Dietly</span>
         </div>
-       
       </nav>
 
       {/* Main Layout */}
-      <main className="flex flex-col lg:flex-row w-full mt-28 py-12 px-12 flex-1 bg-white">
-
+      <main className="flex flex-col lg:flex-row w-full py-12 px-12 flex-1 bg-white">
         {/* Left Info Section */}
         <div className="flex-1 pr-12 hidden lg:flex flex-col justify-center">
           <div className="bg-green-50 rounded-lg p-12 shadow flex flex-col items-center">
@@ -44,6 +47,7 @@ export default function LoginPage() {
             <p className="text-lg text-gray-700 text-center">Track your nutrition journey and make every day healthier!</p>
           </div>
         </div>
+
         {/* Login Form Section */}
         <div className="w-full max-w-md mx-auto lg:mx-0 mt-8 lg:mt-0">
           <div className="bg-white rounded-lg shadow p-8 border border-green-100">
@@ -51,13 +55,12 @@ export default function LoginPage() {
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Leaf className="w-8 h-8 text-green-600" />
-                <h1 className="text-3xl font-bold text-green-700">
-                  Dietly
-                </h1>
+                <h1 className="text-3xl font-bold text-green-700">Dietly</h1>
               </div>
               <p className="text-gray-700 text-lg">Welcome back!</p>
               <p className="text-gray-500 text-sm">Login to continue your healthy journey</p>
             </div>
+
             {/* Login Form */}
             <div className="space-y-5">
               {/* Email Field */}
@@ -78,6 +81,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+
               {/* Password Field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -103,6 +107,7 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
               {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between pt-1">
                 <label className="flex items-center cursor-pointer group">
@@ -121,6 +126,7 @@ export default function LoginPage() {
                   Forgot password?
                 </button>
               </div>
+
               {/* Login Button */}
               <button
                 onClick={handleLogin}
@@ -129,6 +135,7 @@ export default function LoginPage() {
                 Login
               </button>
             </div>
+
             {/* Divider */}
             <div className="relative my-7">
               <div className="absolute inset-0 flex items-center">
@@ -138,6 +145,7 @@ export default function LoginPage() {
                 <span className="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
               </div>
             </div>
+
             {/* Social Login Buttons */}
             <div className="flex gap-4">
               <button
@@ -162,11 +170,12 @@ export default function LoginPage() {
                 Facebook
               </button>
             </div>
+
             {/* Sign Up Link */}
             <p className="text-center text-sm text-gray-600 mt-6">
               Don't have an account?{' '}
               <button
-                onClick={() => console.log('Create account clicked')}
+                onClick={handleCreateAccount}
                 className="text-green-600 hover:text-green-700 font-bold transition"
               >
                 Create account
@@ -175,6 +184,7 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
+
       {/* Footer */}
       <footer className="w-full py-4 text-center text-sm text-gray-500 border-t mt-10">
         &copy; 2025 Dietly. All rights reserved.
