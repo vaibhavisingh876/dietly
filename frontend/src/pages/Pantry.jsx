@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Trash2, ChefHat, Refrigerator, Utensils, Sparkles, Search } from 'lucide-react';
 import Nav from '../components/Nav';
 
+const BASE_URL = "http://localhost:5000/api/Pantry";
+
+
 export default function PantryPage() {
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({ name: '', category: 'kitchen', quantity: '' });
@@ -14,44 +17,99 @@ export default function PantryPage() {
     loadItems();
   }, []);
 
-  const loadItems = async () => {
-    try {
-      const result = await window.storage.get('pantry-items');
-      if (result) {
-        setItems(JSON.parse(result.value));
-      }
-    } catch (error) {
-      console.log('No items found, starting fresh');
-    }
-  };
+const loadItems = async () => {
+  try {
+    const userId = "6700b8d7a9e3f4cabc123456"; // temporarily hardcoded (replace with actual logged-in user ID)
+    const res = await fetch(`http://localhost:5000/api/pantry/user/${userId}`);
+    if (!res.ok) throw new Error("Failed to fetch pantry items");
 
-  const saveItems = async (updatedItems) => {
+    const data = await res.json();
+    const allItems = [
+      ...data.pantry.kitchen.map(i => ({ ...i, category: "kitchen" })),
+      ...data.pantry.fridge.map(i => ({ ...i, category: "fridge" })),
+    ];
+    setItems(allItems);
+  } catch (error) {
+    console.error("Error loading pantry:", error);
+  }
+};
+
+const saveItems = async (updatedItems) => {
+  try {
     setItems(updatedItems);
+    const userId = "6700b8d7a9e3f4cabc123456"; // replace with actual userId (from auth)
+    const kitchen = updatedItems.filter(i => i.category === "kitchen");
+    const fridge = updatedItems.filter(i => i.category === "fridge");
+
+    const res = await fetch(`http://localhost:5000/api/pantry/user/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kitchen, fridge }),
+    });
+
+    if (!res.ok) throw new Error("Failed to save pantry items");
+    const data = await res.json();
+    console.log("✅ Pantry updated:", data);
+  } catch (error) {
+    console.error("❌ Failed to save items:", error);
+  }
+};
+
+const addItem = async () => {
+  if (newItem.name.trim() && newItem.quantity.trim()) {
     try {
-      await window.storage.set('pantry-items', JSON.stringify(updatedItems));
-    } catch (error) {
-      console.error('Failed to save items:', error);
-    }
-  };
+      const userId = "6700b8d7a9e3f4cabc123456"; // replace later with logged-in user's id
 
-  const addItem = async () => {
-    if (newItem.name.trim() && newItem.quantity.trim()) {
-      const item = {
-        id: Date.now(),
-        ...newItem,
-        addedAt: new Date().toISOString()
-      };
-      const updatedItems = [...items, item];
-      await saveItems(updatedItems);
-      setNewItem({ name: '', category: 'kitchen', quantity: '' });
+      // backend ko bhejne ke liye ek single item
+      const res = await fetch(`http://localhost:5000/api/pantry/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          category: newItem.category,
+          items: [
+            {
+              name: newItem.name,
+              quantity: newItem.quantity,
+              addedAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add item");
+
+      const data = await res.json();
+      console.log("✅ Item added:", data);
+
+      // frontend state update karo
+      const updatedItems = [...items, { ...newItem, id: Date.now() }];
+      setItems(updatedItems);
+      setNewItem({ name: "", category: "kitchen", quantity: "" });
       setShowAddForm(false);
+    } catch (error) {
+      console.error("❌ Error adding item:", error);
     }
-  };
+  }
+};
 
-  const deleteItem = (id) => {
-    const updatedItems = items.filter(item => item.id !== id);
-    saveItems(updatedItems);
-  };
+const deleteItem = async (id) => {
+  try {
+    // backend call (optional, if you want real deletion)
+    const res = await fetch(`http://localhost:5000/api/pantry/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Failed to delete item");
+    console.log("🗑️ Item deleted successfully");
+
+    // frontend state update karo
+    const updatedItems = items.filter((item) => item.id !== id);
+    setItems(updatedItems);
+  } catch (error) {
+    console.error("❌ Error deleting item:", error);
+  }
+};
 
   const generateMealSuggestions = () => {
     setIsGenerating(true);
