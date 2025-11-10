@@ -1,8 +1,20 @@
+// src/pages/Home.jsx
 import React, { useEffect, useState } from "react";
-import { Leaf, Apple, TrendingUp, Users, Target, BarChart3, Heart, Calendar, Globe, GitGraphIcon, WavesLadderIcon, GitGraph, GitBranchPlus, LucideLoader2 } from "lucide-react";
-import Nav from "../components/Nav";
+import {
+  Leaf,
+  Apple,
+  TrendingUp,
+  Users,
+  Target,
+  BarChart3,
+  Heart,
+  Calendar,
+  Globe,
+  LucideLoader2,
+} from "lucide-react";
+import Nav from "../components/Nav.jsx";
 
-export default function HomePage() {
+export default function Home() {
   // Counter animation hook
   const useCounter = (end, duration = 2000) => {
     const [count, setCount] = useState(0);
@@ -28,19 +40,49 @@ export default function HomePage() {
   const countryCount = useCounter(100);
 
   const features = [
-    { icon: <Apple className="w-8 h-8" />, title: "Smart Meal Analysis", description: "Get instant nutritional and health insights for every meal you log powered by AI." },
-    { icon: <TrendingUp className="w-8 h-8" />, title: "Personalized Feedback", description: "Receive meaningful suggestions to improve your eating habits and balance your diet." },
-    { icon: <Target className="w-8 h-8" />, title: "Daily Streak Tracking", description:  "Stay motivated with streaks that reward consistency in logging meals and healthy choices." },
-    { icon: <BarChart3 className="w-8 h-8" />, title: "Macro Tracking", description:"Monitor your protein, carbs, and fats intake to ensure balanced nutrition every day." },
-    { icon: <Heart className="w-8 h-8" />, title: "Meal History & Progress", description:  "Easily view your past meals and monitor how your eating habits evolve over time." },
-    { icon: <Calendar className="w-8 h-8" />, title: "AI-Driven Health Insights", description:  "Go beyond calorie counts understand the true nutritional impact of your food." },
+    {
+      icon: <Apple className="w-8 h-8" />,
+      title: "Smart Meal Analysis",
+      description:
+        "Get instant nutritional and health insights for every meal you log powered by AI.",
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8" />,
+      title: "Personalized Feedback",
+      description:
+        "Receive meaningful suggestions to improve your eating habits and balance your diet.",
+    },
+    {
+      icon: <Target className="w-8 h-8" />,
+      title: "Daily Streak Tracking",
+      description:
+        "Stay motivated with streaks that reward consistency in logging meals and healthy choices.",
+    },
+    {
+      icon: <BarChart3 className="w-8 h-8" />,
+      title: "Macro Tracking",
+      description:
+        "Monitor your protein, carbs, and fats intake to ensure balanced nutrition every day.",
+    },
+    {
+      icon: <Heart className="w-8 h-8" />,
+      title: "Meal History & Progress",
+      description:
+        "Easily view your past meals and monitor how your eating habits evolve over time.",
+    },
+    {
+      icon: <Calendar className="w-8 h-8" />,
+      title: "AI-Driven Health Insights",
+      description:
+        "Go beyond calorie counts and understand the true nutritional impact of your food.",
+    },
   ];
 
   const team = [
-    { name: "Nitya Singh", image: "SJ" },
-    { name: "Shreya Bisht", image: "MC" },
-    { name: "Shreya Rathore", image: "ER" },
-    { name: "Vaibhavi Singh", image: "DK" },
+    { name: "Nitya Singh", image: "NS" },
+    { name: "Shreya Bisht", image: "SB" },
+    { name: "Shreya Rathore", image: "SR" },
+    { name: "Vaibhavi Singh", image: "VS" },
   ];
 
   return (
@@ -78,17 +120,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           {/* Left: About */}
           <div>
-            <h2 className="text-5xl font-bold text-gray-900 mb-6 text-center md:text-left">About Our App</h2>
+            <h2 className="text-5xl font-bold text-gray-900 mb-6 text-center md:text-left">
+              About Our App
+            </h2>
             <p className="text-gray-700 leading-relaxed mb-4">
               Dietly is your personal meal companion designed to make healthy eating effortless and smart. It helps you understand what’s really on your plate by analyzing your meals and giving you clear, AI-powered insights into their nutritional value and overall health impact.
-             
             </p>
             <p className="text-gray-700 leading-relaxed mb-4">
               Dietly encourages you to stay consistent with your eating goals through daily streaks that celebrate your progress and keep you motivated. Each time you log your meals, you not only track your food you track your journey toward better habits.
-              
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Whether you’re focused on fitness, wellness, or simply mindful eating, Dietly makes it easier to stay informed, balanced, and consistent. It is more than just a tracker it is your guide to building a healthier relationship with food.
+              Whether you’re focused on fitness, wellness, or simply mindful eating, Dietly makes it easier to stay informed, balanced, and consistent. It is more than just a tracker; it is your guide to building a healthier relationship with food.
             </p>
           </div>
 
@@ -118,7 +160,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features Section */}
       <section className="py-24 bg-white px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-5xl font-bold text-gray-900 mb-12">Powerful Features</h2>
@@ -139,7 +181,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team Section */}
       <section className="py-24 bg-gray-50 px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-5xl font-bold text-gray-900 mb-12">Meet Our Team</h2>
@@ -164,9 +206,7 @@ export default function HomePage() {
               <Leaf className="w-7 h-7 text-green-500" />
               <span className="text-2xl font-bold text-white">Dietly</span>
             </div>
-            <p className="text-gray-400 text-sm">
-              Feed Your Ambition, Not Just Your Appetite.
-            </p>
+            <p className="text-gray-400 text-sm">Feed Your Ambition, Not Just Your Appetite.</p>
           </div>
           <div>
             <h4 className="text-lg font-semibold text-white mb-3">Product</h4>

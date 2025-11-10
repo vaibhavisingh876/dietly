@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// Quiz Intro Component (Register/Landing Page)
+// Quiz Intro Component
 const QuizIntro = ({ onNext }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
@@ -37,7 +38,7 @@ const QuizIntro = ({ onNext }) => {
   );
 };
 
-// Quiz Question Component
+// Quiz Question Component (No changes needed here)
 const QuizQuestion = ({ question, currentStep, totalSteps, onNext, onPrev, isLast }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const progress = ((currentStep + 1) / totalSteps) * 100;
@@ -132,7 +133,7 @@ const QuizQuestion = ({ question, currentStep, totalSteps, onNext, onPrev, isLas
 };
 
 // Results Component
-const Results = ({ answers, onRestart }) => {
+const Results = ({ answers, onGoToApp }) => { 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
@@ -161,18 +162,19 @@ const Results = ({ answers, onRestart }) => {
         </div>
         
         <button
-          onClick={onRestart}
+          onClick={onGoToApp}
           className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-full transition-colors"
         >
-          Start New Quiz
+          Go to Dashboard
         </button>
       </div>
     </div>
   );
 };
 
-// Main App Component
-export default function App() {
+// Main logic component that uses the hooks
+function QuestionnaireLogic() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState('intro');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -238,6 +240,7 @@ export default function App() {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
+      // Logic for saving data would go here (e.g., call API endpoint with 'answers')
       setCurrentPage('results');
     }
   };
@@ -249,10 +252,9 @@ export default function App() {
     }
   };
 
-  const handleRestart = () => {
-    setCurrentPage('intro');
-    setCurrentQuestion(0);
-    setAnswers([]);
+  const handleGoToApp = () => {
+    // Navigate to the main application page after quiz completion
+    navigate('/Analyze'); 
   };
 
   if (currentPage === 'intro') {
@@ -273,8 +275,11 @@ export default function App() {
   }
 
   if (currentPage === 'results') {
-    return <Results answers={answers} onRestart={handleRestart} />;
+    return <Results answers={answers} onGoToApp={handleGoToApp} />;
   }
 
   return null;
 }
+
+// 🐛 Export the logic component directly as the default export
+export default QuestionnaireLogic;
