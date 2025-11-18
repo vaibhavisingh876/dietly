@@ -8,6 +8,7 @@ import PantryRoutes from "./routes/Pantry.js";
 import aiRoutes from "./routes/ai.js";
 import ProgressRoutes from "./routes/progress.js";
 import mealRoutes from "./routes/meals.js";
+import calorieRoutes from "./routes/calorie.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +28,8 @@ app.use("/api/pantry", PantryRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/progress", ProgressRoutes);
 app.use("/api/meals", mealRoutes);
+app.use("/api/calorie", calorieRoutes);
+
 
 // Connect to MongoDB with proper options for SRV / DNS / hotspot issues
 mongoose

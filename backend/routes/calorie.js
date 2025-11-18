@@ -1,113 +1,170 @@
-import React, { useEffect, useState } from 'react';
-import { Leaf, Drop } from 'lucide-react';
+import express from "express";
+import Calorie from "../models/Calorie.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
+dotenv.config();
 
-export default function Calories() {
-  const meals = ['Breakfast', 'Lunch', 'Dinner', 'Evening Snack'];
-  const [mealCalories, setMealCalories] = useState({});
-  const [waterCount, setWaterCount] = useState(0);
-  const [calorieGoal, setCalorieGoal] = useState(2000); // default goal
-  const [totalCalories, setTotalCalories] = useState(0);
+const router = express.Router();
 
-  // Load saved data from localStorage
-  useEffect(() => {
-    const savedMeals = JSON.parse(localStorage.getItem('mealCalories')) || {};
-    const savedWater = parseInt(localStorage.getItem('waterCount')) || 0;
-    setMealCalories(savedMeals);
-    setWaterCount(savedWater);
-  }, []);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-  useEffect(() => {
-    const total = Object.values(mealCalories).reduce((a, b) => a + (parseInt(b) || 0), 0);
-    setTotalCalories(total);
-  }, [mealCalories]);
+// Helper: today's date
+const today = () => new Date().toISOString().split("T")[0];
 
-  const handleMealChange = (meal, value) => {
-    const updated = { ...mealCalories, [meal]: parseInt(value) || 0 };
-    setMealCalories(updated);
-    localStorage.setItem('mealCalories', JSON.stringify(updated));
-  };
+// Helper: AI se calories nikalna
+const getCaloriesFromAI = async (mealText) => {
+  const prompt = `Analyze the following meal: "${mealText}". Return ONLY the estimated total calorie count as a single number. Do not include any text, units, or explanations.`;
+  try {
+    const result = await model.generateContent(prompt);
+    // Remove any non-digit characters and parse the integer
+    const text = result.response.text.replace(/[^\d]/g, '');
+    return parseInt(text) || 0;
+  } catch (e) {
+    console.error("AI Calorie Analysis Failed:", e);
+    return 0;
+  }
+};
 
-  const handleAddWater = () => {
-    const newCount = waterCount + 1;
-    setWaterCount(newCount);
-    localStorage.setItem('waterCount', newCount);
-  };
+// Get today's entry (ab goal bhi dega)
+router.get("/today", async (req, res) => {
+  try {
+    const entry = await Calorie.findOne({ date: today() });
+    res.json({ entry });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
-  const resetDaily = () => {
-    setMealCalories({});
-    setWaterCount(0);
-    localStorage.removeItem('mealCalories');
-    localStorage.removeItem('waterCount');
-  };
+// Naya Endpoint: Daily Goal Set Karna
+router.post("/set-goal", async (req, res) => {
+  const { goal } = req.body;
 
-  const caloriePercentage = Math.min(Math.round((totalCalories / calorieGoal) * 100), 100);
+  try {
+    let entry = await Calorie.findOne({ date: today() });
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6 sm:p-10 flex flex-col items-center">
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-700 via-green-600 to-green-700 mb-8">
-        Calorie & Water Tracker
-      </h1>
+    if (!entry) {
+      entry = new Calorie({ date: today(), dailyGoal: goal });
+    } else {
+      entry.dailyGoal = goal;
+    }
+    await entry.save();
 
-      <div className="w-full max-w-3xl space-y-6">
-        {/* Meal Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {meals.map((meal) => (
-            <div key={meal} className="bg-white rounded-3xl shadow-lg p-4 flex flex-col">
-              <span className="font-bold text-lg text-gray-700 mb-2">{meal}</span>
-              <input
-                type="number"
-                placeholder="Enter calories"
-                value={mealCalories[meal] || ''}
-                onChange={(e) => handleMealChange(meal, e.target.value)}
-                className="rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
-              />
-            </div>
-          ))}
-        </div>
+    res.json({ message: "Daily goal updated", entry });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating daily goal" });
+  }
+});
 
-        {/* Water Tracker */}
-        <div className="bg-white rounded-3xl shadow-lg p-4 flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-2">
-            <Drop className="w-6 h-6 text-blue-500" />
-            <span className="font-semibold text-gray-700 text-lg">Water Glasses: {waterCount}</span>
-          </div>
-          <button
-            onClick={handleAddWater}
-            className="px-6 py-2 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:scale-105 transition-transform"
-          >
-            +1 Glass
-          </button>
-        </div>
 
-        {/* Total Calories */}
-        <div className="bg-white rounded-3xl shadow-lg p-6 flex flex-col items-center">
-          <span className="text-lg font-bold text-gray-700 mb-2">Total Calories</span>
-          <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden mb-2">
-            <div
-              className="h-6 bg-gradient-to-r from-green-600 to-green-700 text-white flex items-center justify-center font-semibold"
-              style={{ width: `${caloriePercentage}%` }}
-            >
-              {caloriePercentage}%
-            </div>
-          </div>
-          <span className="text-gray-600">Goal: {calorieGoal} kcal</span>
-          {caloriePercentage >= 100 ? (
-            <span className="mt-2 text-green-700 font-bold">🎉 Goal Achieved!</span>
-          ) : (
-            <span className="mt-2 text-gray-700 font-medium">Keep going!</span>
-          )}
-        </div>
+// Naya Endpoint: Meal Text se Calories jodna
+router.post("/add-meal-text", async (req, res) => {
+  const { mealType, mealText } = req.body;
 
-        {/* Reset Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={resetDaily}
-            className="px-6 py-2 rounded-full bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
-          >
-            Reset Daily
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+  try {
+    const calories = await getCaloriesFromAI(mealText);
+
+    let entry = await Calorie.findOne({ date: today() });
+
+    if (!entry) {
+      entry = new Calorie({ date: today() });
+    }
+
+    // Purane calories se naye calories ko replace karein ya add karein
+    entry.meals[mealType] = calories; 
+    await entry.save();
+
+    res.json({ message: "Meal updated and calories estimated by AI", calories, entry });
+  } catch (err) {
+    res.status(500).json({ error: "Error processing meal text" });
+  }
+});
+
+
+// Naya Endpoint: Over-intake par AI Tips aur Next Day Plan
+router.post("/ai-over-intake-plan", async (req, res) => {
+  const { totalCalories, dailyGoal } = req.body;
+  const surplus = totalCalories - dailyGoal;
+
+  const prompt = `
+    User has consumed ${totalCalories} kcal against a daily goal of ${dailyGoal} kcal, resulting in a surplus of ${surplus} kcal.
+    
+    1. Give a short, encouraging tip (max 2 lines) to help them burn the surplus calories today (e.g., exercise ideas).
+    2. Give a simple, sample diet plan for the next day (max 3 short meals/snack ideas) to help them get back on track.
+    
+    Format the response as JSON:
+    {
+      "tip": "...",
+      "nextDayPlan": [
+        {"meal": "Breakfast", "food": "..."},
+        {"meal": "Lunch", "food": "..."},
+        {"meal": "Snack", "food": "..."}
+      ]
+    }
+  `;
+
+  try {
+    const result = await model.generateContent({
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            tip: { type: "STRING" },
+            nextDayPlan: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  meal: { type: "STRING" },
+                  food: { type: "STRING" }
+                }
+              }
+            }
+          },
+        }
+      }
+    });
+
+    const jsonText = result.response.text.trim();
+    // Safety check: attempt to parse the JSON response
+    const aiResponse = JSON.parse(jsonText); 
+    res.json(aiResponse);
+
+  } catch (e) {
+    console.error("AI Over-Intake Plan Failed:", e);
+    // Fallback response in case of AI or JSON parsing error
+    res.status(200).json({ 
+      tip: `You consumed ${surplus} kcal extra. Go for a brisk 30-minute walk to burn some calories!`,
+      nextDayPlan: [
+        { "meal": "Breakfast", "food": "Oats with berries (200 kcal)" },
+        { "meal": "Lunch", "food": "Large salad with grilled chicken (350 kcal)" },
+        { "meal": "Dinner", "food": "Steamed vegetables and lentils (300 kcal)" }
+      ]
+    });
+  }
+});
+
+
+// Old water intake route (unchanged)
+router.post("/add-water", async (req, res) => {
+  const { amount } = req.body;
+
+  try {
+    let entry = await Calorie.findOne({ date: today() });
+
+    if (!entry) {
+      entry = new Calorie({ date: today() });
+    }
+
+    entry.waterIntake = amount;
+    await entry.save();
+
+    res.json({ message: "Water updated", entry });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating water" });
+  }
+});
+
+export default router;

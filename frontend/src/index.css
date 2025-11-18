@@ -3,14 +3,6 @@
 @tailwind utilities;
 
 body {
+  /* This uses a Tailwind utility class defined above */
   @apply bg-gray-50;
 }
-
-
-
-
-
-
-
-
-
