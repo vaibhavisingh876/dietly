@@ -1,188 +1,187 @@
-import React, { useEffect, useState } from "react";
-import { Target, Droplet, Coffee, Salad, Beef, AlertTriangle, Send, Utensils, Loader2 } from "lucide-react";
-import api from "../api/api.js";
-import Nav from "../components/Nav.jsx";
-
-const MEAL_TYPES = [
-  { key: "breakfast", label: "Breakfast", icon: Coffee },
-  { key: "lunch", label: "Lunch", icon: Salad },
-  { key: "dinner", label: "Dinner", icon: Beef },
-  { key: "eveningSnack", label: "Evening Snack", icon: Coffee },
-];
+import { useState } from "react";
+import axios from "axios";
 
 export default function Calories() {
-  const [meals, setMeals] = useState({ breakfast: 0, lunch: 0, dinner: 0, eveningSnack: 0 });
-  const [dailyGoal, setDailyGoal] = useState(2000);
-  const [water, setWater] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [mealText, setMealText] = useState("");
-  const [activeMealType, setActiveMealType] = useState(MEAL_TYPES[0].key);
+  const [foodInput, setFoodInput] = useState("");
+  const [manualInput, setManualInput] = useState("");
+  const [goal, setGoal] = useState(2000);
 
-  const totalCalories = Object.values(meals).reduce((a, b) => Math.max(0, a) + Math.max(0, b), 0);
-  const isOverGoal = totalCalories > dailyGoal;
+  const [calories, setCalories] = useState({
+    breakfast: 0,
+    lunch: 0,
+    snacks: 0,
+    dinner: 0,
+  });
 
-  const fetchToday = async () => {
+  const [selectedSection, setSelectedSection] = useState("breakfast");
+
+  // 🔥 PREVENT PAGE RELOAD ALWAYS
+  const preventSubmit = (e) => e.preventDefault();
+
+  // 🧠 Handle AI Calories Fetch + Add
+  const addAICalories = async () => {
+    if (!foodInput.trim()) return;
+
     try {
-      setLoading(true);
-      const res = await api.get("/calorie/today");
-      if (res.data.entry) {
-        const entry = res.data.entry;
-        const validatedMeals = {};
-        for (const key in entry.meals) validatedMeals[key] = Math.max(0, entry.meals[key] || 0);
-        setMeals(validatedMeals);
-        setWater(entry.waterIntake || 0);
-        setDailyGoal(entry.dailyGoal || 2000);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      const res = await axios.post("http://localhost:5000/api/ai/calc", {
+        query: `How many calories in ${foodInput}? Only give number.`,
+      });
+
+      let value = parseInt(res.data.calories || 0);
+
+      setCalories((prev) => ({
+        ...prev,
+        [selectedSection]: prev[selectedSection] + value,
+      }));
+
+      setFoodInput("");
+    } catch (err) {
+      console.error("AI error:", err);
+      alert("AI error while fetching calories.");
     }
   };
 
-  useEffect(() => { fetchToday(); }, []);
+  // 🔥 MANUAL CALORIE ADD
+  const addManualCalories = () => {
+    if (!manualInput.trim()) return;
 
-  const handleGoalChange = async (value) => {
-    const goal = Math.max(1000, parseInt(value) || 2000);
-    setDailyGoal(goal);
-    try { await api.post("/calorie/set-goal", { goal }); } catch (e) { console.error(e); }
+    let value = parseInt(manualInput);
+    if (isNaN(value)) return;
+
+    setCalories((prev) => ({
+      ...prev,
+      [selectedSection]: prev[selectedSection] + value,
+    }));
+
+    setManualInput("");
   };
 
-  const handleWaterChange = async (value) => {
-    const num = Math.max(0, parseInt(value) || 0);
-    setWater(num);
-    try { await api.post("/calorie/add-water", { amount: num }); } catch (e) { console.error(e); }
+  // 🗑 RESET SPECIFIC MEAL CALORIES
+  const deleteCalories = (section) => {
+    setCalories((prev) => ({
+      ...prev,
+      [section]: 0,
+    }));
   };
 
-  const handleMealSubmit = async (e) => {
-    e.preventDefault();
-    if (!mealText.trim()) return;
-    setLoading(true);
-    try {
-      const res = await api.post("/calorie/add-meal-text", { mealType: activeMealType, mealText });
-      const newCalorieValue = res.data.entry.meals[activeMealType];
-      setMeals({ ...meals, [activeMealType]: newCalorieValue });
-      setMealText("");
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  };
+  const total = Object.values(calories).reduce((a, b) => a + b, 0);
+  const remaining = goal > total ? goal - total : 0;
+  const exceeded = total > goal;
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
-      <Nav />
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto pb-12">
-        <div className="bg-white p-8 rounded-3xl shadow-2xl border-t-4 border-green-600 space-y-8">
-          <h1 className="text-4xl font-extrabold text-gray-800 text-center flex items-center justify-center gap-3">
-            <Target className="w-8 h-8 text-green-600" /> Daily Tracker
-          </h1>
+    <div className="flex flex-col items-center p-4 bg-[#e7f7e9] min-h-screen">
 
-          {/* Goal & Total */}
-          <div className="flex justify-around items-center bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-500">Goal (kcal)</p>
-              <input type="number" value={dailyGoal} onChange={e => handleGoalChange(e.target.value)}
-                className="mt-1 text-xl font-extrabold text-green-600 w-24 text-center bg-transparent border-b-2 border-green-300 focus:border-green-600 outline-none transition-all"
-                min="1000"
-              />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-500">Total Intake (kcal)</p>
-              <p className={`mt-1 text-3xl font-extrabold ${isOverGoal ? 'text-red-600' : 'text-green-600'}`}>
-                {totalCalories}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-500">Remaining (kcal)</p>
-              <p className={`mt-1 text-xl font-bold ${isOverGoal ? 'text-red-500' : 'text-blue-500'}`}>
-                {dailyGoal - totalCalories}
-              </p>
-            </div>
-          </div>
+      {/* GOAL INPUT */}
+      <div className="bg-white p-4 rounded-xl shadow w-full max-w-lg mb-4">
+        <label className="font-semibold">Daily Calorie Goal:</label>
+        <input
+          type="number"
+          className="w-full mt-2 p-2 border rounded"
+          value={goal}
+          onChange={(e) => setGoal(Number(e.target.value))}
+        />
+      </div>
 
-          {/* Meal Form */}
-          <div className="border border-green-300 rounded-2xl p-6 bg-green-50/70 shadow-lg">
-            <h2 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-              <Utensils className="w-6 h-6" /> Log Your Meal
-            </h2>
-            <form onSubmit={handleMealSubmit} className="space-y-4">
-              <div className="flex space-x-2 overflow-x-auto pb-2">
-                {MEAL_TYPES.map(meal => {
-                  const Icon = meal.icon;
-                  const isActive = activeMealType === meal.key;
-                  return (
-                    <button type="button" key={meal.key} onClick={() => setActiveMealType(meal.key)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-sm transition-all whitespace-nowrap ${isActive ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-green-100'}`}>
-                      <Icon className="w-4 h-4" /> {meal.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <textarea rows="3" value={mealText} onChange={e => setMealText(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all resize-none"
-                placeholder={`Enter details for your ${activeMealType}`} disabled={loading}>
-              </textarea>
-
-              <button type="submit"
-                className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 shadow-lg"
-                disabled={loading || !mealText.trim()}>
-                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing...</> : <><Send className="w-5 h-5" /> Log Meal & Get Calories</>}
-              </button>
-            </form>
-          </div>
-
-          {/* Today's Log */}
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-800">Today's Calorie Log</h2>
-            {MEAL_TYPES.map(({ key, label, icon: Icon }) => (
-              <div key={key} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <Icon className="w-6 h-6 text-green-500" />
-                  <span className="font-semibold text-gray-700">{label}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-lg font-bold text-gray-800">{meals[key] || 0}</span>
-                  <span className="text-sm text-gray-500 ml-1">kcal</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Water Intake */}
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-            <label className="font-extrabold text-lg text-blue-700 flex items-center gap-3">
-              <Droplet className="w-6 h-6 fill-blue-500 text-white" /> Water Intake (ml)
-            </label>
-            <input type="number" value={water} onChange={e => handleWaterChange(e.target.value)}
-              className="border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all rounded-lg px-3 py-2 w-28 text-right text-gray-800 font-medium" placeholder="ml" min="0"
-            />
-          </div>
-
+      {/* FOOD INPUT + AI ADD */}
+      <form
+        onSubmit={preventSubmit}
+        className="bg-white p-4 rounded-xl shadow w-full max-w-lg mb-4"
+      >
+        <label className="font-semibold">Enter Food Item:</label>
+        <div className="flex gap-2 mt-2">
+          <input
+            type="text"
+            className="flex-1 p-2 border rounded"
+            value={foodInput}
+            onChange={(e) => setFoodInput(e.target.value)}
+            placeholder="e.g., Paneer tikka"
+          />
+          <button
+            type="button"
+            onClick={addAICalories}
+            className="px-4 py-2 bg-green-600 text-white rounded"
+          >
+            AI Add
+          </button>
         </div>
 
-        {/* Static Red Alert Box for Over Goal */}
-        {isOverGoal && (
-          <div className="mt-8 p-6 bg-red-50 border-4 border-red-400 rounded-3xl shadow-xl space-y-6 animate-pulseRed">
-            <div className="flex items-center gap-4 text-red-700">
-              <AlertTriangle className="w-8 h-8 fill-red-500 text-white" />
-              <h2 className="text-2xl font-extrabold">GOAL EXCEEDED!</h2>
-              <span className="text-xl font-bold ml-auto">+{totalCalories - dailyGoal} kcal Surplus</span>
-            </div>
+        {/* SECTION SELECTION */}
+        <div className="flex justify-between mt-4">
+          {["breakfast", "lunch", "snacks", "dinner"].map((sec) => (
+            <button
+              type="button"
+              key={sec}
+              onClick={() => setSelectedSection(sec)}
+              className={`px-3 py-1 rounded ${
+                selectedSection === sec
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {sec.charAt(0).toUpperCase() + sec.slice(1)}
+            </button>
+          ))}
+        </div>
+      </form>
 
-            <p className="p-3 bg-red-100 rounded-xl border border-red-200 text-red-800 font-medium shadow-inner italic">
-              You consumed {totalCalories - dailyGoal} kcal extra. Try jumping jacks or a brisk walk!
-            </p>
-          </div>
-        )}
+      {/* MANUAL CALORIES */}
+      <form
+        onSubmit={preventSubmit}
+        className="bg-white p-4 rounded-xl shadow w-full max-w-lg mb-4"
+      >
+        <label className="font-semibold">Add Calories Manually:</label>
+        <div className="flex gap-2 mt-2">
+          <input
+            type="number"
+            className="flex-1 p-2 border rounded"
+            value={manualInput}
+            onChange={(e) => setManualInput(e.target.value)}
+            placeholder="e.g., 350"
+          />
+          <button
+            type="button"
+            onClick={addManualCalories}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Add
+          </button>
+        </div>
+      </form>
 
-        <style>{`
-          @keyframes pulseRed {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-            50% { box-shadow: 0 0 10px 5px rgba(239, 68, 68, 0.7); }
-          }
-          .animate-pulseRed {
-            animation: pulseRed 3s infinite;
-          }
-        `}</style>
+      {/* DISPLAY SECTIONS */}
+      {["breakfast", "lunch", "snacks", "dinner"].map((sec) => (
+        <div
+          key={sec}
+          className="bg-white p-4 rounded-xl shadow w-full max-w-lg mb-3 flex justify-between items-center"
+        >
+          <span className="font-semibold capitalize">
+            {sec}: {calories[sec]} kcal
+          </span>
+          <button
+            className="px-3 py-1 bg-red-500 text-white rounded"
+            onClick={() => deleteCalories(sec)}
+          >
+            Reset
+          </button>
+        </div>
+      ))}
+
+      {/* TOTAL SUMMARY */}
+      <div className="bg-white p-4 rounded-xl shadow w-full max-w-lg mt-4 text-center">
+        <p className="text-lg font-bold">
+          Total Intake:{" "}
+          <span className={exceeded ? "text-red-600" : "text-green-700"}>
+            {total} kcal
+          </span>
+        </p>
+
+        <p className="mt-2 font-semibold">
+          {exceeded ? (
+            <span className="text-red-600">⚠ Goal Exceeded!</span>
+          ) : (
+            `Remaining: ${remaining} kcal`
+          )}
+        </p>
       </div>
     </div>
   );
