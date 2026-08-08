@@ -2,8 +2,12 @@
 import express from "express";
 import Meal from "../models/Meal.js";
 import { analyzeMeal } from "../utils/geminiClient.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Protect all routes in this file
+router.use(authMiddleware);
 
 // 🧠 AI Meal Analysis
 router.post("/analyze", async (req, res) => {
@@ -15,7 +19,6 @@ router.post("/analyze", async (req, res) => {
 
     const aiResult = await analyzeMeal(text);
 
-    // Validate AI result
     if (
       !aiResult ||
       !aiResult.summary ||
@@ -28,7 +31,6 @@ router.post("/analyze", async (req, res) => {
         .json({ error: "AI returned invalid response. Try again." });
     }
 
-    // Standardized response for frontend
     const response = {
       success: true,
       data: {
@@ -50,15 +52,16 @@ router.post("/analyze", async (req, res) => {
 // Add new meal
 router.post("/add", async (req, res) => {
   try {
-    const { userId, mealName, ingredients, calories, mealType } = req.body;
+    const { mealName, ingredients, calories, mealType } = req.body;
+    const userId = req.user.id;
 
-    if (!userId || !mealName) {
-      return res.status(400).json({ error: "User ID and meal name required." });
+    if (!mealName) {
+      return res.status(400).json({ error: "Meal name is required." });
     }
 
     const meal = new Meal({
       userId,
-      name: mealName, // Make sure field name matches schema
+      name: mealName,
       ingredients: ingredients || [],
       calories: calories || 0,
       mealType: mealType || "Lunch",

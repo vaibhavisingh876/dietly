@@ -1,16 +1,28 @@
 import express from "express";
 import Progress from "../models/Progress.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Protect all routes
+router.use(authMiddleware);
 
 // ✅ Add progress record
 router.post("/add", async (req, res) => {
   try {
-    const { userId, date, caloriesConsumed, caloriesBurned, mealsTracked } = req.body;
+    const {
+      date,
+      caloriesConsumed,
+      caloriesBurned,
+      protein,
+      carbs,
+      fats,
+      mealsTracked
+    } = req.body;
+    const userId = req.user.id;
 
-    // Simple validation
-    if (!userId || !date) {
-      return res.status(400).json({ error: "userId and date are required" });
+    if (!date) {
+      return res.status(400).json({ error: "date is required" });
     }
 
     const progress = new Progress({
@@ -18,6 +30,9 @@ router.post("/add", async (req, res) => {
       date,
       caloriesConsumed: caloriesConsumed || 0,
       caloriesBurned: caloriesBurned || 0,
+      protein: protein || 0,
+      carbs: carbs || 0,
+      fats: fats || 0,
       mealsTracked: mealsTracked || 0,
     });
 
@@ -29,12 +44,12 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// ✅ Get all progress records of a user
-router.get("/user/:userId", async (req, res) => {
+// ✅ Get all progress records of the authenticated user
+router.get("/", async (req, res) => {
   try {
-    const progress = await Progress.find({ userId: req.params.userId })
+    const progress = await Progress.find({ userId: req.user.id })
       .sort({ date: -1 })
-      .lean(); // faster, returns plain JS objects
+      .lean();
     res.status(200).json(progress);
   } catch (error) {
     console.error("Error fetching progress:", error);
