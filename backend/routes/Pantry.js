@@ -1,6 +1,7 @@
 import express from "express";
 import Pantry from "../models/Pantry.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { generateRecipesFromIngredients } from "../utils/geminiClient.js";
 
 const router = express.Router();
 
@@ -78,6 +79,42 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     console.error("Delete pantry error:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Suggest recipes based on pantry items using Gemini
+router.post("/suggest-recipes", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const pantry = await Pantry.findOne({ userId });
+    if (!pantry) {
+      return res.status(400).json({ error: "No pantry items available" });
+    }
+
+    // Collect ingredient names from both kitchen and fridge
+    const getItemNames = (items) =>
+      items.map(item => (typeof item === "string" ? item : item.name)).filter(Boolean);
+
+    const kitchenItems = getItemNames(pantry.kitchen || []);
+    const fridgeItems = getItemNames(pantry.fridge || []);
+    const allItems = [...kitchenItems, ...fridgeItems];
+
+    if (allItems.length === 0) {
+      return res.status(400).json({ error: "No pantry items available" });
+    }
+
+    // Call Gemini to generate recipes
+    const recipes = await generateRecipesFromIngredients(allItems);
+
+    res.json({
+      success: true,
+      recipes
+    });
+  } catch (err) {
+    console.error("Suggest recipes error:", err);
+    // If Gemini fails, return 500
+    res.status(500).json({ error: "Failed to generate recipe suggestions" });
   }
 });
 

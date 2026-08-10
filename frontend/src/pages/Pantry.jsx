@@ -131,10 +131,7 @@ export default function PantryPage() {
     try {
       const ingredients = items.map((item) => item.name);
 
-      const response = await api.post("/ai/suggest", {
-        ingredients,
-      });
-
+      const response = await api.post("/pantry/suggest-recipes");
       const data = response.data;
 
       if (data.success && Array.isArray(data.recipes)) {

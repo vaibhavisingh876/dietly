@@ -13,8 +13,8 @@ const GEMINI_API_URL =
 // ======= Queue + Cache =======
 const requestQueue = [];
 let isProcessingQueue = false;
-const cache = new Map(); // simple in-memory cache
-const PROMPT_RETRY_LIMIT = 2; // max retries per prompt
+const cache = new Map();
+const PROMPT_RETRY_LIMIT = 2;
 
 const processQueue = async () => {
     if (isProcessingQueue || requestQueue.length === 0) return;
@@ -23,11 +23,10 @@ const processQueue = async () => {
     while (requestQueue.length > 0) {
         const { prompt, resolve, reject, retryCount } = requestQueue.shift();
         
-        // 🔥 Cache Check: Yahan dekho ki API call zaroori hai ya nahi
         if (cache.has(prompt)) {
             console.log("🟢 CACHE HIT (Gemini Client): Serving request from internal cache.");
             resolve(cache.get(prompt));
-            await new Promise(r => setTimeout(r, 100)); // small delay for clean console
+            await new Promise(r => setTimeout(r, 100));
             continue;
         }
 
@@ -47,31 +46,24 @@ const processQueue = async () => {
             if (!response.ok) {
                 console.error("❌ Gemini API Error:", data);
                 if (retryCount < PROMPT_RETRY_LIMIT) {
-                    // retry after delay
                     requestQueue.push({ prompt, resolve, reject, retryCount: retryCount + 1 });
                 } else {
                     reject(new Error(data.error?.message || "Failed to fetch from Gemini API"));
                 }
-                await new Promise(r => setTimeout(r, 5000)); // wait 5 sec before next
+                await new Promise(r => setTimeout(r, 5000));
                 continue;
             }
 
             const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
             let jsonResult = {};
             try {
+                // Try to extract JSON from the response (it may have extra text)
                 const jsonStart = rawText.indexOf("{");
                 const jsonEnd = rawText.lastIndexOf("}") + 1;
                 jsonResult = JSON.parse(rawText.slice(jsonStart, jsonEnd));
-                 if (
-                    !jsonResult.summary ||
-                    !Array.isArray(jsonResult.macros) ||
-                    !Array.isArray(jsonResult.feedback)
-                    ) 
-                    {
-                        throw new Error("Invalid Gemini response");
-                    }
+                // ✅ REMOVED hardcoded validation — now each function validates its own format
             } catch (e) {
-                console.error("Invalid Gemini response:", e.message);
+                console.error("Invalid JSON from Gemini:", e.message);
                 reject(e);
                 continue;
             }
@@ -79,11 +71,11 @@ const processQueue = async () => {
             cache.set(prompt, jsonResult);
             resolve(jsonResult);
 
-            await new Promise(r => setTimeout(r, 6000)); // 6 sec gap between requests
+            await new Promise(r => setTimeout(r, 6000));
         } catch (err) {
-            console.error("Gemini Analyze Error:", err);
+            console.error("Gemini API Error:", err);
             reject(err);
-            await new Promise(r => setTimeout(r, 5000)); // wait before next
+            await new Promise(r => setTimeout(r, 5000));
         }
     }
 
@@ -103,41 +95,62 @@ export const analyzeMeal = async (mealText) => {
 Analyze this meal: "${mealText}".
 Return only a JSON object exactly in this format:
 {
-  "summary": "Short summary of the meal",
-  "macros": [
-    {"name": "Calories", "value": "420 kcal"},
-    {"name": "Protein", "value": "32g"},
-    {"name": "Carbs", "value": "48g"},
-    {"name": "Fiber", "value": "15g"}
-  ],
-  "feedback": [
-    {"text": "Great protein source", "type": "positive"},
-    {"text": "Consider drinking more water", "type": "neutral"}
-  ]
+  "summary": "Short summary of the meal",
+  "macros": [
+    {"name": "Calories", "value": "420 kcal"},
+    {"name": "Protein", "value": "32g"},
+    {"name": "Carbs", "value": "48g"},
+    {"name": "Fiber", "value": "15g"}
+  ],
+  "feedback": [
+    {"text": "Great protein source", "type": "positive"},
+    {"text": "Consider drinking more water", "type": "neutral"}
+  ]
 }`;
 
-    return enqueueRequest(prompt);
+    const result = await enqueueRequest(prompt);
+    // ✅ Validation moved here
+    if (!result.summary || !Array.isArray(result.macros) || !Array.isArray(result.feedback)) {
+        throw new Error("Invalid Gemini response for analyzeMeal");
+    }
+    return result;
 };
 
-    export const getRecipeSuggestion = async (ingredients) => {
+export const getRecipeSuggestion = async (ingredients) => {
     const prompt = `
-    Suggest exactly 3 recipes using these ingredients:
-    ${ingredients.join(", ")}
+Suggest exactly 3 recipes using these ingredients:
+${ingredients.join(", ")}
 
-    Return ONLY valid JSON in this format:
+Guidelines:
+- Prioritize using the provided ingredients as much as possible.
+- You may assume common pantry staples (salt, oil, spices, water) are available, but avoid adding expensive or uncommon items.
+- Each recipe must have a name, difficulty (Easy/Medium/Hard), estimated cook time, list of main ingredients (only those actually used, including some staples if necessary), and a brief cooking instruction.
 
+Return ONLY valid JSON in this format:
+
+{
+  "recipes": [
     {
-    "recipes": [
-        {
-        "name": "",
-        "difficulty": "",
-        "cookTime": "",
-        "ingredients": [],
-        "recipe": ""
-        }
-    ]
+      "name": "Recipe name",
+      "difficulty": "Easy",
+      "cookTime": "20 mins",
+      "ingredients": ["ingredient1", "ingredient2"],
+      "recipe": "Step-by-step instructions in a few sentences."
     }
-    `;
+  ]
+}
+`;
 
-    return enqueueRequest(prompt);
-    };
+    const result = await enqueueRequest(prompt);
+    // ✅ Validation moved here
+    if (!result.recipes || !Array.isArray(result.recipes) || result.recipes.length === 0) {
+        throw new Error("Invalid Gemini response for getRecipeSuggestion");
+    }
+    return result;
+};
+
+// NEW: Wrapper that returns just the recipes array (for pantry route)
+export const generateRecipesFromIngredients = async (ingredients) => {
+    const result = await getRecipeSuggestion(ingredients);
+    return result.recipes || [];
+};
