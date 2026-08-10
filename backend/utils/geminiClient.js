@@ -2,8 +2,7 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-console.log("Using GEMINI_API_KEY:", process.env.GEMINI_API_KEY);
-
+console.log("✅ Gemini API initialized");
 if (!process.env.GEMINI_API_KEY) {
     throw new Error("❌ GEMINI_API_KEY missing in .env");
 }
@@ -63,8 +62,18 @@ const processQueue = async () => {
                 const jsonStart = rawText.indexOf("{");
                 const jsonEnd = rawText.lastIndexOf("}") + 1;
                 jsonResult = JSON.parse(rawText.slice(jsonStart, jsonEnd));
+                 if (
+                    !jsonResult.summary ||
+                    !Array.isArray(jsonResult.macros) ||
+                    !Array.isArray(jsonResult.feedback)
+                    ) 
+                    {
+                        throw new Error("Invalid Gemini response");
+                    }
             } catch (e) {
-                console.warn("Failed to parse JSON, returning empty object");
+                console.error("Invalid Gemini response:", e.message);
+                reject(e);
+                continue;
             }
 
             cache.set(prompt, jsonResult);
@@ -110,7 +119,25 @@ Return only a JSON object exactly in this format:
     return enqueueRequest(prompt);
 };
 
-export const getRecipeSuggestion = async (ingredients) => {
-    const prompt = `Suggest 3 recipes using these ingredients: ${ingredients.join(", ")}.`;
+    export const getRecipeSuggestion = async (ingredients) => {
+    const prompt = `
+    Suggest exactly 3 recipes using these ingredients:
+    ${ingredients.join(", ")}
+
+    Return ONLY valid JSON in this format:
+
+    {
+    "recipes": [
+        {
+        "name": "",
+        "difficulty": "",
+        "cookTime": "",
+        "ingredients": [],
+        "recipe": ""
+        }
+    ]
+    }
+    `;
+
     return enqueueRequest(prompt);
-};
+    };
