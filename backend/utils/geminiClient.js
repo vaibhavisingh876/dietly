@@ -1,132 +1,261 @@
+
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-console.log("✅ Gemini API initialized");
-if (!process.env.GEMINI_API_KEY) {
-    throw new Error("❌ GEMINI_API_KEY missing in .env");
+
+console.log("✅ Groq API initialized");
+
+if (!process.env.GROQ_API_KEY) {
+    throw new Error("❌ GROQ_API_KEY missing in .env");
 }
 
-const GEMINI_API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "openai/gpt-oss-20b";
 
 // ======= Queue + Cache =======
 const requestQueue = [];
 let isProcessingQueue = false;
 const cache = new Map();
+
 const PROMPT_RETRY_LIMIT = 2;
 
 const processQueue = async () => {
     if (isProcessingQueue || requestQueue.length === 0) return;
+
     isProcessingQueue = true;
 
     while (requestQueue.length > 0) {
         const { prompt, resolve, reject, retryCount } = requestQueue.shift();
-        
+
+        // ===== CACHE =====
         if (cache.has(prompt)) {
-            console.log("🟢 CACHE HIT (Gemini Client): Serving request from internal cache.");
+            console.log(
+                "🟢 CACHE HIT (Groq Client): Serving request from internal cache."
+            );
+
             resolve(cache.get(prompt));
-            await new Promise(r => setTimeout(r, 100));
+
+            await new Promise((r) => setTimeout(r, 100));
             continue;
         }
 
-        console.log("🔴 CACHE MISS (Gemini Client): Calling external Gemini API...");
+        console.log(
+            "🔴 CACHE MISS (Groq Client): Calling external Groq API..."
+        );
 
         try {
-            const response = await fetch(`${GEMINI_API_URL}?key=${process.env.GEMINI_API_KEY}`, {
+            const response = await fetch(GROQ_API_URL, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
+                    model: GROQ_MODEL,
+
+                    messages: [
+                        {
+                            role: "user",
+                            content: prompt,
+                        },
+                    ],
+
+                    // Force JSON response
+                    response_format: {
+                        type: "json_object",
+                    },
+
+                    temperature: 0.2,
                 }),
             });
 
             const data = await response.json();
 
+            // ===== API ERROR =====
             if (!response.ok) {
-                console.error("❌ Gemini API Error:", data);
+                console.error("❌ Groq API Error:", data);
+
                 if (retryCount < PROMPT_RETRY_LIMIT) {
-                    requestQueue.push({ prompt, resolve, reject, retryCount: retryCount + 1 });
+                    console.log(
+                        `🔄 Retrying Groq request... (${retryCount + 1}/${PROMPT_RETRY_LIMIT})`
+                    );
+
+                    requestQueue.push({
+                        prompt,
+                        resolve,
+                        reject,
+                        retryCount: retryCount + 1,
+                    });
                 } else {
-                    reject(new Error(data.error?.message || "Failed to fetch from Gemini API"));
+                    reject(
+                        new Error(
+                            data.error?.message ||
+                                "Failed to fetch from Groq API"
+                        )
+                    );
                 }
-                await new Promise(r => setTimeout(r, 5000));
+
+                await new Promise((r) => setTimeout(r, 5000));
                 continue;
             }
 
-            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+            // ===== EXTRACT RESPONSE =====
+            const rawText =
+                data?.choices?.[0]?.message?.content || "{}";
+
             let jsonResult = {};
+
             try {
-                // Try to extract JSON from the response (it may have extra text)
-                const jsonStart = rawText.indexOf("{");
-                const jsonEnd = rawText.lastIndexOf("}") + 1;
-                jsonResult = JSON.parse(rawText.slice(jsonStart, jsonEnd));
-                // ✅ REMOVED hardcoded validation — now each function validates its own format
+                jsonResult = JSON.parse(rawText);
             } catch (e) {
-                console.error("Invalid JSON from Gemini:", e.message);
+                console.error(
+                    "❌ Invalid JSON from Groq:",
+                    e.message
+                );
+
+                // Retry if Groq returned invalid JSON
+                if (retryCount < PROMPT_RETRY_LIMIT) {
+                    console.log(
+                        `🔄 Retrying because response was not valid JSON...`
+                    );
+
+                    requestQueue.push({
+                        prompt,
+                        resolve,
+                        reject,
+                        retryCount: retryCount + 1,
+                    });
+
+                    await new Promise((r) => setTimeout(r, 3000));
+                    continue;
+                }
+
                 reject(e);
                 continue;
             }
 
+            // ===== CACHE RESULT =====
             cache.set(prompt, jsonResult);
+
             resolve(jsonResult);
 
-            await new Promise(r => setTimeout(r, 6000));
+            // Small delay between requests
+            await new Promise((r) => setTimeout(r, 1000));
         } catch (err) {
-            console.error("Gemini API Error:", err);
-            reject(err);
-            await new Promise(r => setTimeout(r, 5000));
+            console.error("❌ Groq API Error:", err);
+
+            if (retryCount < PROMPT_RETRY_LIMIT) {
+                requestQueue.push({
+                    prompt,
+                    resolve,
+                    reject,
+                    retryCount: retryCount + 1,
+                });
+
+                await new Promise((r) => setTimeout(r, 3000));
+            } else {
+                reject(err);
+            }
         }
     }
 
     isProcessingQueue = false;
 };
 
+// ======= Queue Request =======
 const enqueueRequest = (prompt) => {
     return new Promise((resolve, reject) => {
-        requestQueue.push({ prompt, resolve, reject, retryCount: 0 });
+        requestQueue.push({
+            prompt,
+            resolve,
+            reject,
+            retryCount: 0,
+        });
+
         processQueue();
     });
 };
 
-// ======= API functions =======
+// =====================================================
+// ANALYZE MEAL
+// =====================================================
+
 export const analyzeMeal = async (mealText) => {
     const prompt = `
 Analyze this meal: "${mealText}".
-Return only a JSON object exactly in this format:
+
+Return ONLY a JSON object exactly in this format:
+
 {
   "summary": "Short summary of the meal",
   "macros": [
-    {"name": "Calories", "value": "420 kcal"},
-    {"name": "Protein", "value": "32g"},
-    {"name": "Carbs", "value": "48g"},
-    {"name": "Fiber", "value": "15g"}
+    {
+      "name": "Calories",
+      "value": "420 kcal"
+    },
+    {
+      "name": "Protein",
+      "value": "32g"
+    },
+    {
+      "name": "Carbs",
+      "value": "48g"
+    },
+    {
+      "name": "Fiber",
+      "value": "15g"
+    }
   ],
   "feedback": [
-    {"text": "Great protein source", "type": "positive"},
-    {"text": "Consider drinking more water", "type": "neutral"}
+    {
+      "text": "Great protein source",
+      "type": "positive"
+    },
+    {
+      "text": "Consider drinking more water",
+      "type": "neutral"
+    }
   ]
-}`;
+}
+`;
 
     const result = await enqueueRequest(prompt);
-    // ✅ Validation moved here
-    if (!result.summary || !Array.isArray(result.macros) || !Array.isArray(result.feedback)) {
-        throw new Error("Invalid Gemini response for analyzeMeal");
+
+    // ===== VALIDATION =====
+    if (
+        !result.summary ||
+        !Array.isArray(result.macros) ||
+        !Array.isArray(result.feedback)
+    ) {
+        throw new Error("Invalid Groq response for analyzeMeal");
     }
+
     return result;
 };
+
+// =====================================================
+// RECIPE SUGGESTION
+// =====================================================
 
 export const getRecipeSuggestion = async (ingredients) => {
     const prompt = `
 Suggest exactly 3 recipes using these ingredients:
+
 ${ingredients.join(", ")}
 
 Guidelines:
 - Prioritize using the provided ingredients as much as possible.
-- You may assume common pantry staples (salt, oil, spices, water) are available, but avoid adding expensive or uncommon items.
-- Each recipe must have a name, difficulty (Easy/Medium/Hard), estimated cook time, list of main ingredients (only those actually used, including some staples if necessary), and a brief cooking instruction.
+- You may assume common pantry staples such as salt, oil, spices and water.
+- Avoid expensive or uncommon ingredients.
+- Each recipe must have:
+  - name
+  - difficulty (Easy/Medium/Hard)
+  - estimated cook time
+  - list of main ingredients actually used
+  - brief cooking instructions
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON in this exact format:
 
 {
   "recipes": [
@@ -134,7 +263,10 @@ Return ONLY valid JSON in this format:
       "name": "Recipe name",
       "difficulty": "Easy",
       "cookTime": "20 mins",
-      "ingredients": ["ingredient1", "ingredient2"],
+      "ingredients": [
+        "ingredient1",
+        "ingredient2"
+      ],
       "recipe": "Step-by-step instructions in a few sentences."
     }
   ]
@@ -142,15 +274,28 @@ Return ONLY valid JSON in this format:
 `;
 
     const result = await enqueueRequest(prompt);
-    // ✅ Validation moved here
-    if (!result.recipes || !Array.isArray(result.recipes) || result.recipes.length === 0) {
-        throw new Error("Invalid Gemini response for getRecipeSuggestion");
+
+    // ===== VALIDATION =====
+    if (
+        !result.recipes ||
+        !Array.isArray(result.recipes) ||
+        result.recipes.length === 0
+    ) {
+        throw new Error(
+            "Invalid Groq response for getRecipeSuggestion"
+        );
     }
+
     return result;
 };
 
-// NEW: Wrapper that returns just the recipes array (for pantry route)
+// =====================================================
+// PANTRY ROUTE WRAPPER
+// =====================================================
+
 export const generateRecipesFromIngredients = async (ingredients) => {
     const result = await getRecipeSuggestion(ingredients);
+
     return result.recipes || [];
 };
+
