@@ -1,5 +1,5 @@
 import express from "express";
-import Pantry from "../models/Pantry.js";
+import Pantry from "../models/pantry.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { generateRecipesFromIngredients } from "../utils/geminiClient.js";
 
