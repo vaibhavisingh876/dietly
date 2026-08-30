@@ -1,6 +1,6 @@
 // models/UserProfile.js
 
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const userProfileSchema = new mongoose.Schema(
   {
