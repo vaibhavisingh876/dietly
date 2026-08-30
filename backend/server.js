@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
 import PantryRoutes from "./routes/Pantry.js";
 import aiRoutes from "./routes/ai.js";
-import ProgressRoutes from "./routes/progress.js";
+import ProgressRoutes from "./routes/Progress.js";
 import mealRoutes from "./routes/meals.js";
 import calorieRoutes from "./routes/calorie.js";
 
