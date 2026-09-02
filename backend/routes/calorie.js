@@ -1,10 +1,10 @@
 import express from "express";
 
-import Meal from "./models/Meal.js";
-import UserProfile from "./models/Userprofile.js";
+import Meal from "../models/Meal.js";
+import UserProfile from "../models/Userprofile.js";
 
-import { analyzeMeal } from "./utils/groqClient.js";
-import authMiddleware from "./middleware/authMiddleware.js";
+import { analyzeMeal } from "../utils/groqClient.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 import {
   resolveTimezone,
@@ -358,12 +358,6 @@ router.post(
           req.user.id
         );
 
-      /*
-       * Create Meal first.
-       *
-       * If calorie entry later fails,
-       * the created Meal is deleted.
-       */
       const allergyWarnings =
         buildAllergyWarnings(
           cleanMealText,
