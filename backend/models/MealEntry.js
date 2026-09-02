@@ -21,6 +21,7 @@ const mealEntrySchema = new mongoose.Schema(
     dailyGoal: {
       type: Number,
       min: 0,
+      max: 10000,
       default: 2000,
     },
 
@@ -28,24 +29,28 @@ const mealEntrySchema = new mongoose.Schema(
       breakfast: {
         type: Number,
         min: 0,
+        max: 10000,
         default: 0,
       },
 
       lunch: {
         type: Number,
         min: 0,
+        max: 10000,
         default: 0,
       },
 
       dinner: {
         type: Number,
         min: 0,
+        max: 10000,
         default: 0,
       },
 
       eveningSnack: {
         type: Number,
         min: 0,
+        max: 10000,
         default: 0,
       },
     },
@@ -53,6 +58,7 @@ const mealEntrySchema = new mongoose.Schema(
     totalCalories: {
       type: Number,
       min: 0,
+      max: 40000,
       default: 0,
     },
 
@@ -85,9 +91,6 @@ mealEntrySchema.index(
   }
 );
 
-/*
- * Useful for progress/history queries.
- */
 mealEntrySchema.index({
   userId: 1,
   date: -1,

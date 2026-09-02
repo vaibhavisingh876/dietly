@@ -12,12 +12,18 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-const VALID_CATEGORIES = new Set(["kitchen", "fridge"]);
+const VALID_CATEGORIES = new Set([
+  "kitchen",
+  "fridge",
+]);
+
 const MAX_ITEMS_PER_REQUEST = 50;
 const MAX_ITEM_NAME_LENGTH = 100;
 const MAX_QUANTITY_LENGTH = 100;
+const MAX_TOTAL_AI_ITEMS = 100;
 
-// Add pantry items
+/* -------------------- Add Pantry Items -------------------- */
+
 router.post("/add", async (req, res) => {
   try {
     const userId = req.user.id;
@@ -25,7 +31,8 @@ router.post("/add", async (req, res) => {
 
     if (!VALID_CATEGORIES.has(category)) {
       return res.status(400).json({
-        error: "Invalid category. Must be 'kitchen' or 'fridge'.",
+        error:
+          "Invalid category. Must be 'kitchen' or 'fridge'.",
       });
     }
 
@@ -37,36 +44,42 @@ router.post("/add", async (req, res) => {
 
     if (items.length > MAX_ITEMS_PER_REQUEST) {
       return res.status(400).json({
-        error: `You can add at most ${MAX_ITEMS_PER_REQUEST} items at once.`,
+        error:
+          `You can add at most ${MAX_ITEMS_PER_REQUEST} items at once.`,
       });
     }
 
     const cleanedItems = [];
 
     for (const item of items) {
-      const name = typeof item?.name === "string"
-        ? item.name.trim()
-        : "";
+      const name =
+        typeof item?.name === "string"
+          ? item.name.trim()
+          : "";
 
-      const quantity = typeof item?.quantity === "string"
-        ? item.quantity.trim()
-        : "";
+      const quantity =
+        typeof item?.quantity === "string"
+          ? item.quantity.trim()
+          : "";
 
       if (!name || !quantity) {
         return res.status(400).json({
-          error: "Every pantry item must have a name and quantity.",
+          error:
+            "Every pantry item must have a name and quantity.",
         });
       }
 
       if (name.length > MAX_ITEM_NAME_LENGTH) {
         return res.status(400).json({
-          error: `Item name must be ${MAX_ITEM_NAME_LENGTH} characters or less.`,
+          error:
+            `Item name must be ${MAX_ITEM_NAME_LENGTH} characters or less.`,
         });
       }
 
       if (quantity.length > MAX_QUANTITY_LENGTH) {
         return res.status(400).json({
-          error: `Quantity must be ${MAX_QUANTITY_LENGTH} characters or less.`,
+          error:
+            `Quantity must be ${MAX_QUANTITY_LENGTH} characters or less.`,
         });
       }
 
@@ -90,9 +103,12 @@ router.post("/add", async (req, res) => {
 
     await pantry.save();
 
-    const addedItems = pantry[category].slice(-cleanedItems.length);
+    const addedItems = pantry[category].slice(
+      -cleanedItems.length
+    );
 
     return res.status(201).json({
+      success: true,
       message: "Items added successfully.",
       items: addedItems,
     });
@@ -100,12 +116,14 @@ router.post("/add", async (req, res) => {
     console.error("Add pantry error:", error);
 
     return res.status(500).json({
+      success: false,
       error: "Unable to add pantry items.",
     });
   }
 });
 
-// Get authenticated user's pantry
+/* -------------------- Get Pantry -------------------- */
+
 router.get("/", async (req, res) => {
   try {
     const pantry = await Pantry.findOne({
@@ -114,6 +132,7 @@ router.get("/", async (req, res) => {
 
     if (!pantry) {
       return res.json({
+        success: true,
         pantry: {
           kitchen: [],
           fridge: [],
@@ -122,21 +141,29 @@ router.get("/", async (req, res) => {
     }
 
     return res.json({
+      success: true,
       pantry: {
-        kitchen: Array.isArray(pantry.kitchen) ? pantry.kitchen : [],
-        fridge: Array.isArray(pantry.fridge) ? pantry.fridge : [],
+        kitchen: Array.isArray(pantry.kitchen)
+          ? pantry.kitchen
+          : [],
+
+        fridge: Array.isArray(pantry.fridge)
+          ? pantry.fridge
+          : [],
       },
     });
   } catch (error) {
     console.error("Get pantry error:", error);
 
     return res.status(500).json({
+      success: false,
       error: "Unable to load pantry.",
     });
   }
 });
 
-// Delete a pantry item belonging to the authenticated user
+/* -------------------- Delete Pantry Item -------------------- */
+
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -144,6 +171,7 @@ router.delete("/:id", async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
+        success: false,
         error: "Invalid pantry item ID.",
       });
     }
@@ -158,26 +186,37 @@ router.delete("/:id", async (req, res) => {
 
     if (!pantry) {
       return res.status(404).json({
+        success: false,
         error: "Pantry item not found.",
       });
     }
 
     let removed = false;
 
-    for (const category of ["kitchen", "fridge"]) {
-      const originalLength = pantry[category].length;
+    for (const category of [
+      "kitchen",
+      "fridge",
+    ]) {
+      const originalLength =
+        pantry[category].length;
 
-      pantry[category] = pantry[category].filter(
-        (item) => item._id.toString() !== id
-      );
+      pantry[category] =
+        pantry[category].filter(
+          (item) =>
+            item._id.toString() !== id
+        );
 
-      if (pantry[category].length !== originalLength) {
+      if (
+        pantry[category].length !==
+        originalLength
+      ) {
         removed = true;
       }
     }
 
     if (!removed) {
       return res.status(404).json({
+        success: false,
         error: "Pantry item not found.",
       });
     }
@@ -185,18 +224,21 @@ router.delete("/:id", async (req, res) => {
     await pantry.save();
 
     return res.json({
+      success: true,
       message: "Item deleted successfully.",
     });
   } catch (error) {
     console.error("Delete pantry error:", error);
 
     return res.status(500).json({
+      success: false,
       error: "Unable to delete pantry item.",
     });
   }
 });
 
-// Generate AI recipes from pantry
+/* -------------------- AI Recipe Suggestions -------------------- */
+
 router.post("/suggest-recipes", async (req, res) => {
   try {
     const userId = req.user.id;
@@ -207,6 +249,7 @@ router.post("/suggest-recipes", async (req, res) => {
 
     if (!pantry) {
       return res.status(400).json({
+        success: false,
         error: "No pantry items available.",
       });
     }
@@ -222,50 +265,71 @@ router.post("/suggest-recipes", async (req, res) => {
         )
         .filter(Boolean);
 
-    const kitchenItems = getItemNames(pantry.kitchen);
-    const fridgeItems = getItemNames(pantry.fridge);
+    const kitchenItems =
+      getItemNames(pantry.kitchen);
 
-    const allItems = [...kitchenItems, ...fridgeItems];
+    const fridgeItems =
+      getItemNames(pantry.fridge);
+
+    const allItems = [
+      ...kitchenItems,
+      ...fridgeItems,
+    ];
 
     if (allItems.length === 0) {
       return res.status(400).json({
+        success: false,
         error: "No pantry items available.",
       });
     }
 
-    // Avoid sending an unnecessarily huge ingredient list to the AI.
-    const uniqueItems = [...new Set(allItems)].slice(0, 100);
+    const uniqueItems = [
+      ...new Set(allItems),
+    ].slice(0, MAX_TOTAL_AI_ITEMS);
 
-    const profile = await UserProfile.findOne({
-      userId,
-    }).lean();
+    const profile =
+      await UserProfile.findOne({
+        userId,
+      }).lean();
 
-    let recipes = await generateRecipesFromIngredients(
-      uniqueItems,
-      profile
-    );
+    let recipes =
+      await generateRecipesFromIngredients(
+        uniqueItems,
+        profile
+      );
 
     if (!Array.isArray(recipes)) {
       recipes = [];
     }
 
-    const allergies = Array.isArray(profile?.allergies)
+    const allergies = Array.isArray(
+      profile?.allergies
+    )
       ? profile.allergies
       : [];
 
-    if (allergies.length > 0 && recipes.length > 0) {
-      const beforeCount = recipes.length;
+    if (
+      allergies.length > 0 &&
+      recipes.length > 0
+    ) {
+      const beforeCount =
+        recipes.length;
 
-      recipes = filterRecipesForAllergies(
-        recipes,
-        allergies
-      );
+      recipes =
+        filterRecipesForAllergies(
+          recipes,
+          allergies
+        );
 
-      if (recipes.length < beforeCount) {
+      if (
+        recipes.length < beforeCount
+      ) {
         console.log(
           `Filtered ${
             beforeCount - recipes.length
-          } recipe(s) because of user allergies: ${allergies.join(", ")}`
+          } recipe(s) because of user allergies: ${allergies.join(
+            ", "
+          )}`
         );
       }
     }
@@ -273,21 +337,30 @@ router.post("/suggest-recipes", async (req, res) => {
     return res.json({
       success: true,
       recipes,
+
       personalized: Boolean(
         profile &&
           (
             profile.dietaryPreferences ||
             allergies.length > 0 ||
-            (Array.isArray(profile.healthGoals) &&
-              profile.healthGoals.length > 0) ||
+            (
+              Array.isArray(
+                profile.healthGoals
+              ) &&
+              profile.healthGoals.length > 0
+            ) ||
             profile.lifestyle
           )
       ),
     });
   } catch (error) {
-    console.error("Suggest recipes error:", error);
+    console.error(
+      "Suggest recipes error:",
+      error
+    );
 
     return res.status(500).json({
+      success: false,
       error:
         "Failed to generate recipe suggestions. Please try again.",
     });

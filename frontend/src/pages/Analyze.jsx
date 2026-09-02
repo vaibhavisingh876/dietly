@@ -1,306 +1,355 @@
 import React, { useState } from "react";
-import MealForm from "../components/MealForm.jsx";
-import api from "../api/api";
-
+import { useNavigate } from "react-router-dom";
 import {
-  Zap,
-  Trophy,
-  XCircle,
+  AlertCircle,
+  CheckCircle2,
   Loader2,
+  Sparkles,
+  Utensils,
 } from "lucide-react";
-
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 
-const BAR_COLORS = [
-  "#22c55e",
-  "#3b82f6",
-  "#f97316",
-  "#e11d48",
-  "#facc15",
-  "#8b5cf6",
+import MealForm from "../components/MealForm.jsx";
+import { api } from "../api/api";
+
+const MEAL_TYPES = [
+  { value: "Breakfast", label: "Breakfast" },
+  { value: "Lunch", label: "Lunch" },
+  { value: "Dinner", label: "Dinner" },
+  { value: "Snack", label: "Snack" },
 ];
 
-const PIE_COLORS = [
-  "#22c55e",
-  "#3b82f6",
-  "#f97316",
-];
-
-const MAX_MEAL_LENGTH = 1000;
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
 
 export default function Analyze() {
+  const navigate = useNavigate();
+
+  const [mealType, setMealType] = useState("Lunch");
   const [result, setResult] = useState(null);
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
-  const analyze = async (mealText) => {
-    const cleanedText = String(mealText || "").trim();
+  const handleAnalyze = async (mealText) => {
+    const text = typeof mealText === "string" ? mealText.trim() : "";
 
-    if (!cleanedText) {
-      setError("Please describe your meal first.");
+    if (!text) {
+      setError("Please enter what you ate.");
       return;
     }
 
-    if (cleanedText.length > MAX_MEAL_LENGTH) {
-      setError(
-        `Meal description must be ${MAX_MEAL_LENGTH} characters or less.`
-      );
+    if (text.length > 1000) {
+      setError("Meal description cannot exceed 1000 characters.");
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
 
     try {
+      setLoading(true);
+      setError("");
+      setResult(null);
+
       const response = await api.post("/meals/analyze", {
-        text: cleanedText,
+        text,
+        mealType,
       });
 
-      if (!response.data?.data) {
+      const data = response?.data?.data;
+
+      if (!data) {
         throw new Error("Invalid response from server.");
       }
 
-      setResult(response.data.data);
+      setResult(data);
     } catch (err) {
-      console.error(
-        "Meal analysis error:",
-        err.response?.data || err.message
-      );
+      console.error("Meal analysis error:", err);
 
       setError(
-        err.response?.data?.error ||
-          "Unable to analyze this meal. Please try again."
+        err?.response?.data?.message ||
+          "Unable to analyze your meal right now. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const barData =
-    result?.macros
-      ?.filter(
-        (macro) =>
-          macro &&
-          typeof macro.name === "string"
-      )
-      .map((macro) => ({
-        name: macro.name,
-        value: Number.parseFloat(macro.value) || 0,
-      })) || [];
-
-  const pieData =
-    result?.macros
-      ?.filter((macro) =>
-        ["Protein", "Fat", "Carbs"].includes(
-          macro?.name
-        )
-      )
-      .map((macro) => ({
-        name: macro.name,
-        value: Number.parseFloat(macro.value) || 0,
-      })) || [];
+  const nutritionData = result
+    ? [
+        {
+          name: "Calories",
+          value: toNumber(result.calories),
+        },
+        {
+          name: "Protein",
+          value: toNumber(result.protein),
+        },
+        {
+          name: "Carbs",
+          value: toNumber(result.carbs),
+        },
+        {
+          name: "Fat",
+          value: toNumber(result.fat),
+        },
+        {
+          name: "Fiber",
+          value: toNumber(result.fiber),
+        },
+      ]
+    : [];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
-        <div className="text-center pt-8">
-          <h1 className="text-5xl font-extrabold text-gray-900">
-            AI Meal Analyzer
-          </h1>
-
-          <p className="text-center text-xl text-gray-600 font-medium mt-4">
-            Log your meal, get instant nutritional insights,
-            and track your health progress.
-          </p>
-        </div>
-
-        {/* Meal Form */}
-        <div className="bg-white p-8 rounded-3xl shadow-2xl border-t-4 border-green-600">
-          <MealForm
-            onSubmit={analyze}
-            loading={loading}
-          />
-
-          {error && (
-            <div className="mt-6 p-4 text-red-700 bg-red-100 rounded-xl flex items-center gap-2">
-              <XCircle className="w-5 h-5 flex-shrink-0" />
-              <span>{error}</span>
+    <div className="min-h-screen bg-slate-50 px-4 py-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-indigo-100">
+              <Sparkles className="w-7 h-7 text-indigo-600" />
             </div>
-          )}
+
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">
+                AI Meal Analyzer
+              </h1>
+
+              <p className="text-slate-600 mt-1">
+                Describe your meal and get an AI-powered nutrition estimate.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="text-center p-12 text-xl font-medium text-green-700 bg-white rounded-3xl shadow-xl border border-green-200">
-            <Loader2 className="w-10 h-10 text-green-600 mx-auto mb-4 animate-spin" />
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
 
-            Generating AI nutrition report...
+            <p>{error}</p>
           </div>
         )}
 
-        {/* Result */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Utensils className="w-5 h-5 text-indigo-600" />
+
+            <label
+              htmlFor="meal-type"
+              className="font-semibold text-slate-900"
+            >
+              Meal Type
+            </label>
+          </div>
+
+          <select
+            id="meal-type"
+            value={mealType}
+            onChange={(e) => setMealType(e.target.value)}
+            disabled={loading}
+            className="w-full sm:w-64 rounded-xl border border-slate-300 px-4 py-3 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+          >
+            {MEAL_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="mt-5">
+            <MealForm
+              onSubmit={handleAnalyze}
+              loading={loading}
+            />
+          </div>
+        </div>
+
+        {loading && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm border p-10 text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto" />
+
+            <h2 className="mt-4 text-lg font-semibold text-slate-900">
+              Analyzing your meal...
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              This may take a few seconds.
+            </p>
+          </div>
+        )}
+
         {result && !loading && (
-          <div className="bg-white rounded-3xl shadow-2xl border-t-8 border-emerald-600 overflow-hidden">
-            <div className="p-8 border-b border-gray-100 bg-emerald-50 flex justify-between items-center flex-wrap gap-4">
-              <h2 className="text-3xl font-extrabold text-emerald-800 flex items-center gap-3">
-                <Zap className="w-8 h-8 fill-emerald-600 text-white" />
+          <div className="mt-8 space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-green-100">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                </div>
 
-                AI Nutrition Report
-              </h2>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Analysis Complete
+                  </h2>
 
-              <div className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-full font-bold text-lg shadow-xl">
-                <Trophy className="w-5 h-5 fill-current" />
-
-                Meal analyzed
-              </div>
-            </div>
-
-            <div className="p-8 space-y-12">
-              {/* Summary */}
-              {result.summary && (
-                <div className="bg-green-100/70 p-6 rounded-2xl border border-green-200 shadow-inner">
-                  <p className="text-gray-700 text-xl leading-relaxed italic">
-                    <span className="font-extrabold text-green-800 mr-2 not-italic">
-                      AI Summary:
-                    </span>
-
-                    "{result.summary}"
+                  <p className="text-sm text-slate-500 mt-1">
+                    {mealType}
                   </p>
                 </div>
+              </div>
+
+              {result.summary && (
+                <p className="mt-5 text-slate-700 leading-7">
+                  {result.summary}
+                </p>
               )}
+            </div>
 
-              {/* Nutritional Breakdown */}
-              {barData.length > 0 && (
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                    Nutritional Breakdown
-                  </h3>
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-xl font-semibold text-slate-900 mb-5">
+                Nutrition Breakdown
+              </h2>
 
-                  <ResponsiveContainer
-                    width="100%"
-                    height={300}
-                  >
-                    <BarChart data={barData}>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <NutritionCard
+                  label="Calories"
+                  value={result.calories}
+                  unit="kcal"
+                />
+
+                <NutritionCard
+                  label="Protein"
+                  value={result.protein}
+                  unit="g"
+                />
+
+                <NutritionCard
+                  label="Carbs"
+                  value={result.carbs}
+                  unit="g"
+                />
+
+                <NutritionCard
+                  label="Fat"
+                  value={result.fat}
+                  unit="g"
+                />
+
+                <NutritionCard
+                  label="Fiber"
+                  value={result.fiber}
+                  unit="g"
+                />
+              </div>
+
+              {nutritionData.length > 0 && (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={nutritionData}
+                      margin={{
+                        top: 10,
+                        right: 10,
+                        left: 0,
+                        bottom: 10,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+
                       <XAxis dataKey="name" />
+
                       <YAxis />
+
                       <Tooltip />
 
-                      <Bar dataKey="value">
-                        {barData.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`${entry.name}-${index}`}
-                              fill={
-                                BAR_COLORS[
-                                  index %
-                                    BAR_COLORS.length
-                                ]
-                              }
-                            />
-                          )
-                        )}
-                      </Bar>
+                      <Bar
+                        dataKey="value"
+                        fill="#6366f1"
+                        radius={[6, 6, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
+            </div>
 
-              {/* Macronutrient Pie Chart */}
-              {pieData.length > 0 && (
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                    Macronutrient Proportion
-                  </h3>
+            {Array.isArray(result.feedback) &&
+              result.feedback.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-sm border p-6">
+                  <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                    AI Feedback
+                  </h2>
 
-                  <ResponsiveContainer
-                    width="100%"
-                    height={300}
-                  >
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label
+                  <div className="space-y-3">
+                    {result.feedback.map((item, index) => (
+                      <div
+                        key={`${item.text}-${index}`}
+                        className={`rounded-xl p-4 ${
+                          item.type === "positive"
+                            ? "bg-green-50 text-green-800"
+                            : item.type === "warning"
+                            ? "bg-amber-50 text-amber-800"
+                            : "bg-slate-50 text-slate-700"
+                        }`}
                       >
-                        {pieData.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`${entry.name}-${index}`}
-                              fill={
-                                PIE_COLORS[
-                                  index %
-                                    PIE_COLORS.length
-                                ]
-                              }
-                            />
-                          )
-                        )}
-                      </Pie>
-
-                      <Legend />
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        {item.text}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Feedback */}
-              {Array.isArray(result.feedback) &&
-                result.feedback.length > 0 && (
-                  <div>
-                    <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
-                      Personalized Feedback
-                    </h3>
-
-                    <div className="space-y-3">
-                      {result.feedback.map(
-                        (item, index) => (
-                          <div
-                            key={index}
-                            className={`p-4 rounded-xl border ${
-                              item.type === "positive"
-                                ? "bg-green-50 border-green-200 text-green-800"
-                                : item.type === "warning"
-                                ? "bg-amber-50 border-amber-200 text-amber-800"
-                                : "bg-gray-50 border-gray-200 text-gray-800"
-                            }`}
-                          >
-                            {item.text}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              AI nutrition values are estimates and may not be exact.
+              They should not be treated as medical or professional
+              dietary advice.
             </div>
 
-            {/* Disclaimer */}
-            <div className="px-8 pb-8">
-              <p className="text-sm text-gray-500 text-center">
-                AI-generated nutrition estimates are for
-                informational purposes only and should not
-                replace professional medical or dietary advice.
-              </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/history")}
+                className="flex-1 rounded-xl bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700"
+              >
+                View Meal History
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setResult(null);
+                  setError("");
+                }}
+                className="flex-1 rounded-xl border border-slate-300 bg-white text-slate-700 py-3 font-medium hover:bg-slate-50"
+              >
+                Analyze Another Meal
+              </button>
             </div>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function NutritionCard({ label, value, unit }) {
+  const number = toNumber(value);
+
+  return (
+    <div className="rounded-xl bg-slate-50 border p-4 text-center">
+      <p className="text-sm text-slate-500">{label}</p>
+
+      <p className="text-2xl font-bold text-slate-900 mt-1">
+        {Math.round(number * 10) / 10}
+      </p>
+
+      <p className="text-xs text-slate-400">{unit}</p>
     </div>
   );
 }

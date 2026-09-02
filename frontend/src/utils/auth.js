@@ -1,13 +1,6 @@
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
-/**
- * Save authentication data in either localStorage
- * or sessionStorage.
- *
- * persist = true  -> stays logged in after browser restart
- * persist = false -> cleared when browser session ends
- */
 export function saveAuth({
   token,
   user,
@@ -17,97 +10,58 @@ export function saveAuth({
     throw new Error("Authentication token is required.");
   }
 
-  const store = persist
-    ? localStorage
-    : sessionStorage;
+  const primaryStorage = persist ? localStorage : sessionStorage;
+  const secondaryStorage = persist ? sessionStorage : localStorage;
 
-  const otherStore = persist
-    ? sessionStorage
-    : localStorage;
+  primaryStorage.setItem(TOKEN_KEY, token);
 
-  store.setItem(TOKEN_KEY, token);
-
-  if (user !== undefined && user !== null) {
-    store.setItem(
-      USER_KEY,
-      JSON.stringify(user)
-    );
-  } else {
-    store.removeItem(USER_KEY);
+  if (user) {
+    primaryStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
-  // Prevent stale authentication data from the
-  // opposite storage mechanism.
-  otherStore.removeItem(TOKEN_KEY);
-  otherStore.removeItem(USER_KEY);
+  secondaryStorage.removeItem(TOKEN_KEY);
+  secondaryStorage.removeItem(USER_KEY);
 
-  window.dispatchEvent(
-    new Event("authChanged")
-  );
+  window.dispatchEvent(new Event("authChanged"));
 }
 
-/**
- * Returns the currently stored token.
- */
 export function getToken() {
   return (
     localStorage.getItem(TOKEN_KEY) ||
-    sessionStorage.getItem(TOKEN_KEY) ||
-    null
+    sessionStorage.getItem(TOKEN_KEY)
   );
 }
 
-/**
- * Returns the currently stored user.
- *
- * Invalid/corrupted JSON is safely ignored.
- */
 export function getUser() {
-  const raw =
+  const rawUser =
     localStorage.getItem(USER_KEY) ||
     sessionStorage.getItem(USER_KEY);
 
-  if (!raw) {
+  if (!rawUser) {
     return null;
   }
 
   try {
-    return JSON.parse(raw);
-  } catch (error) {
-    console.warn(
-      "Invalid stored user data. Clearing it.",
-      error
-    );
-
+    return JSON.parse(rawUser);
+  } catch {
     localStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(USER_KEY);
-
     return null;
   }
 }
 
-/**
- * Returns whether the user is authenticated.
- */
 export function isAuthenticated() {
   return Boolean(getToken());
 }
 
-/**
- * Clears all authentication data.
- */
-export function logout({
-  redirect = true,
-} = {}) {
+export function logout({ redirect = true } = {}) {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(USER_KEY);
 
-  window.dispatchEvent(
-    new Event("authChanged")
-  );
+  window.dispatchEvent(new Event("authChanged"));
 
   if (redirect) {
     window.location.href = "/login";

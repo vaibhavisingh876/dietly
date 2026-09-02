@@ -54,6 +54,9 @@ export default function Calories() {
   const [mealText, setMealText] =
     useState("");
 
+  const [selectedMealType, setSelectedMealType] =
+    useState("breakfast");
+
   const [aiLoading, setAiLoading] =
     useState(false);
 
@@ -81,8 +84,9 @@ export default function Calories() {
       const response =
         await api.get("/calorie/today");
 
+      // Backend returns { entry }, not { data }
       const today =
-        response.data?.data;
+        response.data?.entry;
 
       if (!today) {
         throw new Error(
@@ -171,12 +175,14 @@ export default function Calories() {
         await api.post(
           "/calorie/add-meal-text",
           {
+            mealType: selectedMealType,
             mealText: cleanedText,
           }
         );
 
+      // Backend returns { calories, entry, mealId }
       const updated =
-        response.data?.data;
+        response.data?.entry;
 
       if (!updated) {
         throw new Error(
@@ -290,7 +296,7 @@ export default function Calories() {
         );
 
       const updated =
-        response.data?.data;
+        response.data?.entry;
 
       if (!updated) {
         throw new Error(
@@ -386,7 +392,7 @@ export default function Calories() {
         );
 
       const updated =
-        response.data?.data;
+        response.data?.entry;
 
       if (!updated) {
         throw new Error(
@@ -468,6 +474,7 @@ export default function Calories() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 px-4 sm:px-6 lg:px-8 py-10">
       <div className="max-w-5xl mx-auto space-y-8">
+
         {/* Header */}
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900">
@@ -495,6 +502,7 @@ export default function Calories() {
         {/* Summary */}
         <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
             <div>
               <p className="text-sm text-gray-500">
                 Consumed
@@ -558,6 +566,37 @@ export default function Calories() {
             Describe what you ate and AI will estimate
             the calories and nutrition.
           </p>
+
+          {/* Meal type selector */}
+          <div className="mt-5">
+            <label
+              htmlFor="ai-meal-type"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Meal Type
+            </label>
+
+            <select
+              id="ai-meal-type"
+              value={selectedMealType}
+              onChange={(e) =>
+                setSelectedMealType(e.target.value)
+              }
+              disabled={aiLoading}
+              className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+            >
+              {MEAL_TYPES.map(
+                ({ key, label }) => (
+                  <option
+                    key={key}
+                    value={key}
+                  >
+                    {label}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
 
           <textarea
             value={mealText}

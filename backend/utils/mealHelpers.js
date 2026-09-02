@@ -14,10 +14,16 @@ const DEFAULT_DAILY_GOAL = 2000;
 /**
  * Safely converts a value into a non-negative finite number.
  */
-function toNonNegativeNumber(value, fallback = 0) {
+function toNonNegativeNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
-  if (!Number.isFinite(number) || number < 0) {
+  if (
+    !Number.isFinite(number) ||
+    number < 0
+  ) {
     return fallback;
   }
 
@@ -27,14 +33,23 @@ function toNonNegativeNumber(value, fallback = 0) {
 /**
  * Ensures the four expected meal buckets always exist.
  *
- * This protects the application from older/incomplete database documents.
+ * This protects the application from older/incomplete
+ * database documents.
  */
 function normalizeMealBuckets(meals = {}) {
   return {
-    breakfast: toNonNegativeNumber(meals.breakfast),
-    lunch: toNonNegativeNumber(meals.lunch),
-    dinner: toNonNegativeNumber(meals.dinner),
-    eveningSnack: toNonNegativeNumber(meals.eveningSnack),
+    breakfast: toNonNegativeNumber(
+      meals.breakfast
+    ),
+    lunch: toNonNegativeNumber(
+      meals.lunch
+    ),
+    dinner: toNonNegativeNumber(
+      meals.dinner
+    ),
+    eveningSnack: toNonNegativeNumber(
+      meals.eveningSnack
+    ),
   };
 }
 
@@ -43,7 +58,6 @@ function normalizeMealBuckets(meals = {}) {
  *
  * If it does not exist, creates it using the supplied calorie goal.
  *
- * `dailyGoalFallback` is only used when creating a new entry.
  * Existing entries retain their existing goal.
  */
 export async function findOrCreateEntry(
@@ -55,7 +69,10 @@ export async function findOrCreateEntry(
     throw new Error("userId is required");
   }
 
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (
+    !date ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(date)
+  ) {
     throw new Error("Invalid date");
   }
 
@@ -87,28 +104,35 @@ export async function findOrCreateEntry(
     return entry;
   }
 
-  // Normalize older/incomplete documents before returning them.
-  entry.meals = normalizeMealBuckets(entry.meals);
+  // Normalize older/incomplete documents.
+  entry.meals = normalizeMealBuckets(
+    entry.meals
+  );
 
   entry.dailyGoal = toNonNegativeNumber(
     entry.dailyGoal,
     safeGoal
   );
 
-  entry.totalCalories = recalcTotalCalories(entry);
+  entry.totalCalories =
+    recalcTotalCalories(entry);
 
   return entry;
 }
 
 /**
- * Recomputes total calories from the four meal buckets.
+ * Recomputes total calories from all four meal buckets.
  */
-export function recalcTotalCalories(entry) {
+export function recalcTotalCalories(
+  entry
+) {
   if (!entry) {
     throw new Error("MealEntry is required");
   }
 
-  const meals = normalizeMealBuckets(entry.meals);
+  const meals = normalizeMealBuckets(
+    entry.meals
+  );
 
   entry.meals = meals;
 
@@ -131,21 +155,31 @@ export async function addCaloriesToEntry({
   calories,
   dailyGoalFallback = DEFAULT_DAILY_GOAL,
 }) {
-  if (!MEAL_BUCKETS.includes(mealType)) {
-    throw new Error("Invalid mealType");
+  if (
+    !MEAL_BUCKETS.includes(mealType)
+  ) {
+    throw new Error(
+      "Invalid mealType"
+    );
   }
 
-  const safeCalories = toNonNegativeNumber(calories);
+  const safeCalories =
+    toNonNegativeNumber(calories);
 
-  const entry = await findOrCreateEntry(
-    userId,
-    date,
-    dailyGoalFallback
-  );
+  const entry =
+    await findOrCreateEntry(
+      userId,
+      date,
+      dailyGoalFallback
+    );
 
-  entry.meals = normalizeMealBuckets(entry.meals);
+  entry.meals =
+    normalizeMealBuckets(
+      entry.meals
+    );
 
-  entry.meals[mealType] += safeCalories;
+  entry.meals[mealType] +=
+    safeCalories;
 
   recalcTotalCalories(entry);
 
@@ -164,21 +198,31 @@ export async function setCaloriesForEntry({
   calories,
   dailyGoalFallback = DEFAULT_DAILY_GOAL,
 }) {
-  if (!MEAL_BUCKETS.includes(mealType)) {
-    throw new Error("Invalid mealType");
+  if (
+    !MEAL_BUCKETS.includes(mealType)
+  ) {
+    throw new Error(
+      "Invalid mealType"
+    );
   }
 
-  const safeCalories = toNonNegativeNumber(calories);
+  const safeCalories =
+    toNonNegativeNumber(calories);
 
-  const entry = await findOrCreateEntry(
-    userId,
-    date,
-    dailyGoalFallback
-  );
+  const entry =
+    await findOrCreateEntry(
+      userId,
+      date,
+      dailyGoalFallback
+    );
 
-  entry.meals = normalizeMealBuckets(entry.meals);
+  entry.meals =
+    normalizeMealBuckets(
+      entry.meals
+    );
 
-  entry.meals[mealType] = safeCalories;
+  entry.meals[mealType] =
+    safeCalories;
 
   recalcTotalCalories(entry);
 
@@ -187,4 +231,6 @@ export async function setCaloriesForEntry({
   return entry;
 }
 
-export { MEAL_BUCKETS };
+export {
+  MEAL_BUCKETS,
+};

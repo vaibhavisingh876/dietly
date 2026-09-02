@@ -69,8 +69,12 @@ export default function Login() {
         );
       }
 
-      // Store token + user using the existing auth utility.
-      saveAuth(data.token, data.user, rememberMe);
+      // saveAuth expects an object.
+      saveAuth({
+        token: data.token,
+        user: data.user,
+        persist: rememberMe,
+      });
 
       /*
        * Questionnaire is an onboarding step.
@@ -99,12 +103,14 @@ export default function Login() {
     setNotice(
       "Password reset is not available yet. Please contact the project administrator."
     );
+
     setError("");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+
         {/* BRAND */}
         <div className="text-center mb-8">
           <Link
@@ -147,6 +153,7 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+
             {/* EMAIL */}
             <div>
               <label

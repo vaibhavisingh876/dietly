@@ -2,7 +2,9 @@ import express from "express";
 import mongoose from "mongoose";
 
 import Meal from "../models/Meal.js";
+import UserProfile from "../models/UserProfile.js";
 import { analyzeMeal } from "../utils/groqClient.js";
+import { buildAllergyWarnings } from "../utils/allergyFilter.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
   getLocalDateString,
@@ -24,9 +26,11 @@ const MAX_ANALYSIS_TEXT_LENGTH = 1000;
 const MAX_MEAL_NAME_LENGTH = 150;
 const MAX_MEAL_TEXT_LENGTH = 1000;
 const MAX_SUMMARY_LENGTH = 1000;
+const MAX_RECIPE_LENGTH = 3000;
 const MAX_INGREDIENTS = 50;
 const MAX_FEEDBACK_ITEMS = 20;
 const MAX_FEEDBACK_TEXT_LENGTH = 500;
+const MAX_CALORIES = 10000;
 
 /* -------------------- Helpers -------------------- */
 
@@ -40,18 +44,8 @@ function toNonNegativeNumber(value) {
   return number;
 }
 
-function extractMacro(macros, name) {
-  if (!Array.isArray(macros)) {
-    return 0;
-  }
-
-  const macro = macros.find(
-    (item) =>
-      typeof item?.name === "string" &&
-      item.name.trim().toLowerCase() === name.toLowerCase()
-  );
-
-  return toNonNegativeNumber(macro?.value);
+function clampNumber(value, max = Infinity) {
+  return Math.min(toNonNegativeNumber(value), max);
 }
 
 function getMealName(text) {
@@ -106,6 +100,74 @@ function getMealType(value) {
     : "Lunch";
 }
 
+function buildMacros(aiResult) {
+  return [
+    {
+      name: "Calories",
+      value: clampNumber(aiResult?.calories, MAX_CALORIES),
+      unit: "kcal",
+    },
+    {
+      name: "Protein",
+      value: toNonNegativeNumber(aiResult?.protein),
+      unit: "g",
+    },
+    {
+      name: "Carbs",
+      value: toNonNegativeNumber(aiResult?.carbs),
+      unit: "g",
+    },
+    {
+      name: "Fat",
+      value: toNonNegativeNumber(aiResult?.fat),
+      unit: "g",
+    },
+    {
+      name: "Fiber",
+      value: toNonNegativeNumber(aiResult?.fiber),
+      unit: "g",
+    },
+  ];
+}
+
+function mergeFeedback(baseFeedback, allergyWarnings) {
+  const combined = [
+    ...(Array.isArray(baseFeedback) ? baseFeedback : []),
+    ...(Array.isArray(allergyWarnings) ? allergyWarnings : []),
+  ];
+
+  const seen = new Set();
+
+  return combined
+    .filter((item) => {
+      if (
+        !item ||
+        typeof item.text !== "string" ||
+        !item.text.trim()
+      ) {
+        return false;
+      }
+
+      const key = item.text.trim().toLowerCase();
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_FEEDBACK_ITEMS)
+    .map((item) => ({
+      type: ["positive", "warning", "neutral"].includes(item.type)
+        ? item.type
+        : "neutral",
+      text: item.text
+        .trim()
+        .slice(0, MAX_FEEDBACK_TEXT_LENGTH),
+    }));
+}
+
 /* -------------------- AI Meal Analysis -------------------- */
 
 router.post("/analyze", async (req, res) => {
@@ -131,12 +193,21 @@ router.post("/analyze", async (req, res) => {
 
     const selectedMealType = getMealType(mealType);
 
+    /* ---------- Load user profile ---------- */
+
+    const profile = await UserProfile.findOne({
+      userId: req.user.id,
+    }).lean();
+
     /* ---------- AI ---------- */
 
     let aiResult;
 
     try {
-      aiResult = await analyzeMeal(cleanText);
+      aiResult = await analyzeMeal(
+        cleanText,
+        profile || null
+      );
     } catch (error) {
       console.error(
         "Groq meal analysis error:",
@@ -155,8 +226,7 @@ router.post("/analyze", async (req, res) => {
     if (
       !aiResult ||
       typeof aiResult !== "object" ||
-      typeof aiResult.summary !== "string" ||
-      !Array.isArray(aiResult.macros)
+      typeof aiResult.summary !== "string"
     ) {
       console.error("Invalid AI meal result:", aiResult);
 
@@ -167,15 +237,31 @@ router.post("/analyze", async (req, res) => {
       });
     }
 
-    const macros = {
-      calories: extractMacro(aiResult.macros, "Calories"),
-      protein: extractMacro(aiResult.macros, "Protein"),
-      carbs: extractMacro(aiResult.macros, "Carbs"),
-      fat: extractMacro(aiResult.macros, "Fat"),
-      fiber: extractMacro(aiResult.macros, "Fiber"),
-    };
+    const macros = buildMacros(aiResult);
 
-    const feedback = sanitizeFeedback(aiResult.feedback);
+    const aiFeedback = sanitizeFeedback(aiResult.feedback);
+
+    /* ---------- Allergy warnings ---------- */
+
+    let allergyWarnings = [];
+
+    try {
+      allergyWarnings = buildAllergyWarnings(
+        cleanText,
+        aiResult.summary,
+        profile?.allergies || []
+      );
+    } catch (error) {
+      console.error(
+        "Allergy warning generation error:",
+        error?.message || error
+      );
+    }
+
+    const feedback = mergeFeedback(
+      aiFeedback,
+      allergyWarnings
+    );
 
     /* ---------- Save ---------- */
 
@@ -193,11 +279,11 @@ router.post("/analyze", async (req, res) => {
 
       mealType: selectedMealType,
 
-      calories: macros.calories,
-      protein: macros.protein,
-      carbs: macros.carbs,
-      fat: macros.fat,
-      fiber: macros.fiber,
+      calories: macros[0].value,
+      protein: macros[1].value,
+      carbs: macros[2].value,
+      fat: macros[3].value,
+      fiber: macros[4].value,
 
       summary: aiResult.summary
         .trim()
@@ -214,7 +300,7 @@ router.post("/analyze", async (req, res) => {
       data: {
         summary: meal.summary,
 
-        macros: aiResult.macros,
+        macros,
 
         feedback,
 
@@ -317,7 +403,7 @@ router.post("/add", async (req, res) => {
 
     const safeRecipe =
       typeof recipe === "string"
-        ? recipe.trim().slice(0, 3000)
+        ? recipe.trim().slice(0, MAX_RECIPE_LENGTH)
         : undefined;
 
     const meal = await Meal.create({
@@ -327,7 +413,7 @@ router.post("/add", async (req, res) => {
 
       ingredients: safeIngredients,
 
-      calories: toNonNegativeNumber(calories),
+      calories: clampNumber(calories, MAX_CALORIES),
       protein: toNonNegativeNumber(protein),
       carbs: toNonNegativeNumber(carbs),
       fat: toNonNegativeNumber(fat),

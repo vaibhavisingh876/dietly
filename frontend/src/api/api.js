@@ -1,37 +1,30 @@
 import axios from "axios";
-import { getToken, logout } from "../utils/auth";
 
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000,
 });
-
-/* -------------------- Request Interceptor -------------------- */
 
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
+    const token =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Tell the backend which calendar day the user is currently in.
-    // This keeps calorie tracking and meal history timezone-aware.
-    try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      if (timezone) {
-        config.headers["X-Timezone"] = timezone;
-      }
-    } catch (error) {
-      console.warn("Unable to resolve browser timezone:", error);
+    if (timezone) {
+      config.headers["x-timezone"] = timezone;
     }
 
     return config;
@@ -39,19 +32,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/* -------------------- Response Interceptor -------------------- */
-
 api.interceptors.response.use(
   (response) => response,
-
   (error) => {
-    console.error(
-      "API error:",
-      error.response?.data || error.message
-    );
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-    if (error.response?.status === 401) {
-      logout();
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+
+      window.dispatchEvent(new Event("authChanged"));
     }
 
     return Promise.reject(error);
