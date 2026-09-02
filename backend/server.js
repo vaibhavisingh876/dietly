@@ -58,6 +58,7 @@ const corsOptions = {
   allowedHeaders: [
     "Content-Type",
     "Authorization",
+    "x-timezone",
   ],
 };
 
