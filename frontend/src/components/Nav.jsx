@@ -9,6 +9,7 @@ import {
   LogOut,
   Target,
   History,
+  TrendingUp,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { logout, getUser } from "../utils/auth";
@@ -36,7 +37,6 @@ export default function Nav() {
 
       let nameToDisplay = "User";
 
-      // Prefer the actual registered name.
       if (user?.name?.trim()) {
         nameToDisplay = user.name.trim();
       } else if (user?.email) {
@@ -70,6 +70,8 @@ export default function Nav() {
       setActiveTab("Pantry");
     } else if (path.startsWith("/calories")) {
       setActiveTab("Calories");
+    } else if (path.startsWith("/progress")) {
+      setActiveTab("Progress");
     } else if (path.startsWith("/history")) {
       setActiveTab("History");
     } else if (path.startsWith("/profile")) {
@@ -82,7 +84,6 @@ export default function Nav() {
       setActiveTab("");
     }
 
-    // Close mobile menu whenever route changes.
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -129,6 +130,11 @@ export default function Nav() {
       name: "Calories",
       href: "/calories",
       icon: Target,
+    },
+    {
+      name: "Progress",
+      href: "/progress",
+      icon: TrendingUp,
     },
   ];
 

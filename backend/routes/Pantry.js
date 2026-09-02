@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import Pantry from "../models/pantry.js";
+import Pantry from "./models/pantry.js";
 import UserProfile from "../models/Userprofile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 

@@ -12,6 +12,7 @@ import Questionnaire from "./pages/Questionnaire.jsx";
 import Pantry from "./pages/Pantry.jsx";
 import Calories from "./pages/Calories.jsx";
 import MealAnalysisPage from "./pages/MealAnalysisPage.jsx";
+import Progress from "./pages/Progress.jsx";
 
 function AppLayout() {
   const location = useLocation();
@@ -44,6 +45,8 @@ function AppLayout() {
         <Route path="/pantry" element={<Pantry />} />
 
         <Route path="/calories" element={<Calories />} />
+
+        <Route path="/progress" element={<Progress />} />
 
         <Route
           path="*"

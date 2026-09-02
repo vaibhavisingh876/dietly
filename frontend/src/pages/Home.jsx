@@ -12,8 +12,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-import Nav from "../components/Nav.jsx";
-
 export default function Home() {
   const features = [
     {
@@ -75,8 +73,6 @@ export default function Home() {
 
   return (
     <div className="w-full min-h-screen bg-white">
-      <Nav currentPage="Home" />
-
       {/* Hero */}
       <section className="min-h-screen flex items-center justify-center text-center bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 px-6 pt-24">
         <div className="max-w-4xl">

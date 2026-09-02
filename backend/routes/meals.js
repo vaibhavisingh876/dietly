@@ -2,12 +2,20 @@ import express from "express";
 import mongoose from "mongoose";
 
 import Meal from "../models/Meal.js";
+import UserProfile from "../models/Userprofile.js";
+
 import { analyzeMeal } from "../utils/groqClient.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+
 import {
   getLocalDateString,
   resolveTimezone,
 } from "../utils/dateUtils.js";
+
+import {
+  findOrCreateEntry,
+  recalcTotalCalories,
+} from "../utils/mealHelpers.js";
 
 const router = express.Router();
 
@@ -20,6 +28,15 @@ const ALLOWED_MEAL_TYPES = [
   "Snack",
 ];
 
+const MEAL_TYPE_TO_ENTRY_BUCKET = {
+  Breakfast: "breakfast",
+  Lunch: "lunch",
+  Dinner: "dinner",
+  Snack: "eveningSnack",
+};
+
+const DEFAULT_CALORIE_GOAL = 2000;
+
 const MAX_ANALYSIS_TEXT_LENGTH = 1000;
 const MAX_MEAL_NAME_LENGTH = 150;
 const MAX_MEAL_TEXT_LENGTH = 1000;
@@ -27,6 +44,7 @@ const MAX_SUMMARY_LENGTH = 1000;
 const MAX_INGREDIENTS = 50;
 const MAX_FEEDBACK_ITEMS = 20;
 const MAX_FEEDBACK_TEXT_LENGTH = 500;
+const MAX_RECIPE_LENGTH = 3000;
 
 /* -------------------- Helpers -------------------- */
 
@@ -64,7 +82,9 @@ function sanitizeFeedback(feedback) {
     )
     .slice(0, MAX_FEEDBACK_ITEMS)
     .map((item) => ({
-      type: ["positive", "warning", "neutral"].includes(item.type)
+      type: ["positive", "warning", "neutral"].includes(
+        item.type
+      )
         ? item.type
         : "neutral",
 
@@ -92,6 +112,51 @@ function getMealType(value) {
     : "Lunch";
 }
 
+async function resolveDailyGoal(userId) {
+  const profile = await UserProfile.findOne({
+    userId,
+  }).lean();
+
+  const goal =
+    profile?.calorieGoalOverride ||
+    profile?.calorieGoal ||
+    DEFAULT_CALORIE_GOAL;
+
+  return Number.isFinite(Number(goal)) && Number(goal) > 0
+    ? Number(goal)
+    : DEFAULT_CALORIE_GOAL;
+}
+
+async function addMealCaloriesToEntry({
+  userId,
+  date,
+  mealType,
+  calories,
+  dailyGoal,
+}) {
+  const bucket =
+    MEAL_TYPE_TO_ENTRY_BUCKET[mealType];
+
+  if (!bucket) {
+    throw new Error("Invalid meal type.");
+  }
+
+  const entry = await findOrCreateEntry(
+    userId,
+    date,
+    dailyGoal
+  );
+
+  entry.meals[bucket] =
+    (entry.meals[bucket] || 0) + calories;
+
+  recalcTotalCalories(entry);
+
+  await entry.save();
+
+  return entry;
+}
+
 /* -------------------- AI Meal Analysis -------------------- */
 
 router.post("/analyze", async (req, res) => {
@@ -107,7 +172,10 @@ router.post("/analyze", async (req, res) => {
 
     const cleanText = text.trim();
 
-    if (cleanText.length > MAX_ANALYSIS_TEXT_LENGTH) {
+    if (
+      cleanText.length >
+      MAX_ANALYSIS_TEXT_LENGTH
+    ) {
       return res.status(400).json({
         success: false,
         error:
@@ -115,7 +183,8 @@ router.post("/analyze", async (req, res) => {
       });
     }
 
-    const selectedMealType = getMealType(mealType);
+    const selectedMealType =
+      getMealType(mealType);
 
     /* ---------- AI ---------- */
 
@@ -143,7 +212,10 @@ router.post("/analyze", async (req, res) => {
       typeof aiResult !== "object" ||
       typeof aiResult.summary !== "string"
     ) {
-      console.error("Invalid AI meal result:", aiResult);
+      console.error(
+        "Invalid AI meal result:",
+        aiResult
+      );
 
       return res.status(502).json({
         success: false,
@@ -153,30 +225,30 @@ router.post("/analyze", async (req, res) => {
     }
 
     const macros = {
-      calories: toNonNegativeNumber(aiResult.calories),
-      protein: toNonNegativeNumber(aiResult.protein),
-      carbs: toNonNegativeNumber(aiResult.carbs),
-      fat: toNonNegativeNumber(aiResult.fat),
-      fiber: toNonNegativeNumber(aiResult.fiber),
+      calories: toNonNegativeNumber(
+        aiResult.calories
+      ),
+
+      protein: toNonNegativeNumber(
+        aiResult.protein
+      ),
+
+      carbs: toNonNegativeNumber(
+        aiResult.carbs
+      ),
+
+      fat: toNonNegativeNumber(
+        aiResult.fat
+      ),
+
+      fiber: toNonNegativeNumber(
+        aiResult.fiber
+      ),
     };
 
-    const feedback = sanitizeFeedback(aiResult.feedback);
-
-    /*
-     * The AI client returns nutrition values as direct numeric fields:
-     *
-     * {
-     *   calories: 420,
-     *   protein: 32,
-     *   carbs: 48,
-     *   fat: 15,
-     *   fiber: 8
-     * }
-     *
-     * The frontend, however, expects a macros array.
-     * So we store numeric fields in MongoDB and create a
-     * backwards-compatible macros array for the frontend response.
-     */
+    const feedback = sanitizeFeedback(
+      aiResult.feedback
+    );
 
     const macroList = [
       {
@@ -206,10 +278,17 @@ router.post("/analyze", async (req, res) => {
       },
     ];
 
-    /* ---------- Save ---------- */
+    /* ---------- Date / Goal ---------- */
 
     const timezone = resolveTimezone(req);
-    const date = getLocalDateString(timezone);
+
+    const date =
+      getLocalDateString(timezone);
+
+    const dailyGoal =
+      await resolveDailyGoal(req.user.id);
+
+    /* ---------- Save Meal ---------- */
 
     const meal = await Meal.create({
       userId: req.user.id,
@@ -237,6 +316,43 @@ router.post("/analyze", async (req, res) => {
       aiGenerated: true,
     });
 
+    /*
+     * IMPORTANT:
+     * Keep Meal and MealEntry synchronized.
+     *
+     * Meal is used for history/macros.
+     * MealEntry is used by the Progress dashboard
+     * for daily calorie totals and trends.
+     */
+
+    try {
+      await addMealCaloriesToEntry({
+        userId: req.user.id,
+        date,
+        mealType: selectedMealType,
+        calories: macros.calories,
+        dailyGoal,
+      });
+    } catch (entryError) {
+      /*
+       * Do not leave a Meal behind if its calorie
+       * tracking entry could not be updated.
+       */
+      try {
+        await Meal.deleteOne({
+          _id: meal._id,
+          userId: req.user.id,
+        });
+      } catch (cleanupError) {
+        console.error(
+          "Meal cleanup failed:",
+          cleanupError
+        );
+      }
+
+      throw entryError;
+    }
+
     return res.status(201).json({
       success: true,
 
@@ -250,10 +366,24 @@ router.post("/analyze", async (req, res) => {
         mealId: meal._id,
 
         date: meal.date,
+
+        /*
+         * Direct numeric fields are also returned
+         * so frontend consumers do not have to depend
+         * exclusively on the macros array.
+         */
+        calories: macros.calories,
+        protein: macros.protein,
+        carbs: macros.carbs,
+        fat: macros.fat,
+        fiber: macros.fiber,
       },
     });
   } catch (error) {
-    console.error("Error analyzing meal:", error);
+    console.error(
+      "Error analyzing meal:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -292,9 +422,13 @@ router.post("/add", async (req, res) => {
       });
     }
 
-    const cleanMealName = mealName.trim();
+    const cleanMealName =
+      mealName.trim();
 
-    if (cleanMealName.length > MAX_MEAL_NAME_LENGTH) {
+    if (
+      cleanMealName.length >
+      MAX_MEAL_NAME_LENGTH
+    ) {
       return res.status(400).json({
         success: false,
         error:
@@ -314,7 +448,8 @@ router.post("/add", async (req, res) => {
 
     if (
       typeof mealText === "string" &&
-      mealText.trim().length > MAX_MEAL_TEXT_LENGTH
+      mealText.trim().length >
+        MAX_MEAL_TEXT_LENGTH
     ) {
       return res.status(400).json({
         success: false,
@@ -323,10 +458,17 @@ router.post("/add", async (req, res) => {
       });
     }
 
-    const selectedMealType = getMealType(mealType);
+    const selectedMealType =
+      getMealType(mealType);
 
-    const timezone = resolveTimezone(req);
-    const date = getLocalDateString(timezone);
+    const timezone =
+      resolveTimezone(req);
+
+    const date =
+      getLocalDateString(timezone);
+
+    const dailyGoal =
+      await resolveDailyGoal(req.user.id);
 
     const safeIngredients =
       sanitizeIngredients(ingredients);
@@ -336,53 +478,119 @@ router.post("/add", async (req, res) => {
 
     const safeSummary =
       typeof summary === "string"
-        ? summary.trim().slice(0, MAX_SUMMARY_LENGTH)
+        ? summary
+            .trim()
+            .slice(
+              0,
+              MAX_SUMMARY_LENGTH
+            )
         : undefined;
 
     const safeMealText =
       typeof mealText === "string"
-        ? mealText.trim().slice(0, MAX_MEAL_TEXT_LENGTH)
+        ? mealText
+            .trim()
+            .slice(
+              0,
+              MAX_MEAL_TEXT_LENGTH
+            )
         : undefined;
 
     const safeRecipe =
       typeof recipe === "string"
-        ? recipe.trim().slice(0, 3000)
+        ? recipe
+            .trim()
+            .slice(
+              0,
+              MAX_RECIPE_LENGTH
+            )
         : undefined;
 
-    const meal = await Meal.create({
-      userId: req.user.id,
+    const safeCalories =
+      toNonNegativeNumber(calories);
 
-      name: cleanMealName,
+    const meal =
+      await Meal.create({
+        userId: req.user.id,
 
-      ingredients: safeIngredients,
+        name: cleanMealName,
 
-      calories: toNonNegativeNumber(calories),
-      protein: toNonNegativeNumber(protein),
-      carbs: toNonNegativeNumber(carbs),
-      fat: toNonNegativeNumber(fat),
-      fiber: toNonNegativeNumber(fiber),
+        ingredients:
+          safeIngredients,
 
-      summary: safeSummary,
+        calories:
+          safeCalories,
 
-      feedback: safeFeedback,
+        protein:
+          toNonNegativeNumber(protein),
 
-      mealText: safeMealText,
+        carbs:
+          toNonNegativeNumber(carbs),
 
-      recipe: safeRecipe,
+        fat:
+          toNonNegativeNumber(fat),
 
-      mealType: selectedMealType,
+        fiber:
+          toNonNegativeNumber(fiber),
 
-      date,
+        summary:
+          safeSummary,
 
-      aiGenerated: Boolean(aiGenerated),
-    });
+        feedback:
+          safeFeedback,
+
+        mealText:
+          safeMealText,
+
+        recipe:
+          safeRecipe,
+
+        mealType:
+          selectedMealType,
+
+        date,
+
+        aiGenerated:
+          Boolean(aiGenerated),
+      });
+
+    /*
+     * Keep manually added meals synchronized
+     * with MealEntry as well.
+     */
+    try {
+      await addMealCaloriesToEntry({
+        userId: req.user.id,
+        date,
+        mealType: selectedMealType,
+        calories: safeCalories,
+        dailyGoal,
+      });
+    } catch (entryError) {
+      try {
+        await Meal.deleteOne({
+          _id: meal._id,
+          userId: req.user.id,
+        });
+      } catch (cleanupError) {
+        console.error(
+          "Meal cleanup failed:",
+          cleanupError
+        );
+      }
+
+      throw entryError;
+    }
 
     return res.status(201).json({
       success: true,
       meal,
     });
   } catch (error) {
-    console.error("Error adding meal:", error);
+    console.error(
+      "Error adding meal:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -395,26 +603,31 @@ router.post("/add", async (req, res) => {
 
 router.get("/history", async (req, res) => {
   try {
-    const meals = await Meal.find({
-      userId: req.user.id,
-    })
-      .sort({
-        date: -1,
-        createdAt: -1,
+    const meals =
+      await Meal.find({
+        userId: req.user.id,
       })
-      .limit(100)
-      .lean();
+        .sort({
+          date: -1,
+          createdAt: -1,
+        })
+        .limit(100)
+        .lean();
 
     return res.json({
       success: true,
       meals,
     });
   } catch (error) {
-    console.error("Meal history error:", error);
+    console.error(
+      "Meal history error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      error: "Failed to load meal history.",
+      error:
+        "Failed to load meal history.",
     });
   }
 });
@@ -425,17 +638,20 @@ router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(id)
+    ) {
       return res.status(400).json({
         success: false,
         error: "Invalid meal ID.",
       });
     }
 
-    const meal = await Meal.findOne({
-      _id: id,
-      userId: req.user.id,
-    }).lean();
+    const meal =
+      await Meal.findOne({
+        _id: id,
+        userId: req.user.id,
+      }).lean();
 
     if (!meal) {
       return res.status(404).json({
@@ -449,7 +665,10 @@ router.get("/:id", async (req, res) => {
       meal,
     });
   } catch (error) {
-    console.error("Meal detail error:", error);
+    console.error(
+      "Meal detail error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,

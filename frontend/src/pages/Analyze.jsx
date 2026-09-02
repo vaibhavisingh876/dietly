@@ -32,6 +32,56 @@ function toNumber(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function normalizeAnalysisResult(data) {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const macroMap = Array.isArray(data.macros)
+    ? data.macros.reduce((acc, item) => {
+        if (!item || typeof item !== "object") {
+          return acc;
+        }
+
+        const key = String(item.name || "")
+          .trim()
+          .toLowerCase();
+
+        if (key) {
+          acc[key] = toNumber(
+            item.value ?? item.amount ?? 0
+          );
+        }
+
+        return acc;
+      }, {})
+    : {};
+
+  return {
+    ...data,
+
+    calories: toNumber(
+      data.calories ?? macroMap.calories
+    ),
+
+    protein: toNumber(
+      data.protein ?? macroMap.protein
+    ),
+
+    carbs: toNumber(
+      data.carbs ?? macroMap.carbs
+    ),
+
+    fat: toNumber(
+      data.fat ?? macroMap.fat
+    ),
+
+    fiber: toNumber(
+      data.fiber ?? macroMap.fiber
+    ),
+  };
+}
+
 export default function Analyze() {
   const navigate = useNavigate();
 
@@ -42,7 +92,10 @@ export default function Analyze() {
   const [error, setError] = useState("");
 
   const handleAnalyze = async (mealText) => {
-    const text = typeof mealText === "string" ? mealText.trim() : "";
+    const text =
+      typeof mealText === "string"
+        ? mealText.trim()
+        : "";
 
     if (!text) {
       setError("Please enter what you ate.");
@@ -50,7 +103,9 @@ export default function Analyze() {
     }
 
     if (text.length > 1000) {
-      setError("Meal description cannot exceed 1000 characters.");
+      setError(
+        "Meal description cannot exceed 1000 characters."
+      );
       return;
     }
 
@@ -59,23 +114,42 @@ export default function Analyze() {
       setError("");
       setResult(null);
 
-      const response = await api.post("/meals/analyze", {
-        text,
-        mealType,
-      });
+      const response = await api.post(
+        "/meals/analyze",
+        {
+          text,
+          mealType,
+        }
+      );
 
       const data = response?.data?.data;
 
       if (!data) {
-        throw new Error("Invalid response from server.");
+        throw new Error(
+          "Invalid response from server."
+        );
       }
 
-      setResult(data);
+      const normalizedResult =
+        normalizeAnalysisResult(data);
+
+      if (!normalizedResult) {
+        throw new Error(
+          "Invalid nutrition data from server."
+        );
+      }
+
+      setResult(normalizedResult);
     } catch (err) {
-      console.error("Meal analysis error:", err);
+      console.error(
+        "Meal analysis error:",
+        err
+      );
 
       setError(
         err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
           "Unable to analyze your meal right now. Please try again."
       );
     } finally {
@@ -123,7 +197,8 @@ export default function Analyze() {
               </h1>
 
               <p className="text-slate-600 mt-1">
-                Describe your meal and get an AI-powered nutrition estimate.
+                Describe your meal and get an
+                AI-powered nutrition estimate.
               </p>
             </div>
           </div>
@@ -152,12 +227,17 @@ export default function Analyze() {
           <select
             id="meal-type"
             value={mealType}
-            onChange={(e) => setMealType(e.target.value)}
+            onChange={(e) =>
+              setMealType(e.target.value)
+            }
             disabled={loading}
             className="w-full sm:w-64 rounded-xl border border-slate-300 px-4 py-3 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
           >
             {MEAL_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
+              <option
+                key={type.value}
+                value={type.value}
+              >
                 {type.label}
               </option>
             ))}
@@ -250,7 +330,10 @@ export default function Analyze() {
 
               {nutritionData.length > 0 && (
                 <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                  >
                     <BarChart
                       data={nutritionData}
                       margin={{
@@ -287,34 +370,39 @@ export default function Analyze() {
                   </h2>
 
                   <div className="space-y-3">
-                    {result.feedback.map((item, index) => (
-                      <div
-                        key={`${item.text}-${index}`}
-                        className={`rounded-xl p-4 ${
-                          item.type === "positive"
-                            ? "bg-green-50 text-green-800"
-                            : item.type === "warning"
-                            ? "bg-amber-50 text-amber-800"
-                            : "bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        {item.text}
-                      </div>
-                    ))}
+                    {result.feedback.map(
+                      (item, index) => (
+                        <div
+                          key={`${item.text}-${index}`}
+                          className={`rounded-xl p-4 ${
+                            item.type === "positive"
+                              ? "bg-green-50 text-green-800"
+                              : item.type === "warning"
+                              ? "bg-amber-50 text-amber-800"
+                              : "bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          {item.text}
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               )}
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              AI nutrition values are estimates and may not be exact.
-              They should not be treated as medical or professional
+              AI nutrition values are estimates and
+              may not be exact. They should not be
+              treated as medical or professional
               dietary advice.
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                onClick={() => navigate("/history")}
+                onClick={() =>
+                  navigate("/history")
+                }
                 className="flex-1 rounded-xl bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700"
               >
                 View Meal History
@@ -338,18 +426,26 @@ export default function Analyze() {
   );
 }
 
-function NutritionCard({ label, value, unit }) {
+function NutritionCard({
+  label,
+  value,
+  unit,
+}) {
   const number = toNumber(value);
 
   return (
     <div className="rounded-xl bg-slate-50 border p-4 text-center">
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-sm text-slate-500">
+        {label}
+      </p>
 
       <p className="text-2xl font-bold text-slate-900 mt-1">
         {Math.round(number * 10) / 10}
       </p>
 
-      <p className="text-xs text-slate-400">{unit}</p>
+      <p className="text-xs text-slate-400">
+        {unit}
+      </p>
     </div>
   );
 }
