@@ -1,177 +1,335 @@
-// routes/meals.js
 import express from "express";
-import mongoose from "mongoose";
+
 import Meal from "../models/Meal.js";
-import UserProfile from "../models/UserProfile.js";
 import { analyzeMeal } from "../utils/groqClient.js";
 import authMiddleware from "../middleware/authMiddleware.js";
-import { resolveTimezone, getLocalDateString } from "../utils/dateUtils.js";
-import { buildAllergyWarnings } from "../utils/allergyFilter.js";
+import {
+  getLocalDateString,
+  resolveTimezone,
+} from "../utils/dateUtils.js";
 
 const router = express.Router();
 
-// Protect all routes in this file — meal data and AI analysis are
-// user-specific, so nothing here is reachable without a valid JWT.
 router.use(authMiddleware);
 
-// =====================================================
-// POST /api/meals/analyze
-//
-// The single, authenticated entry point for AI meal analysis. Consolidates
-// what used to be two separate implementations (the unauthenticated
-// /api/ai/analyze and this route). Flow:
-//   authenticate -> load profile -> personalized AI call -> validate ->
-//   deterministic allergy safety check -> persist Meal -> respond
-// =====================================================
+/* -------------------- Helpers -------------------- */
+
+function toNonNegativeNumber(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number < 0) {
+    return 0;
+  }
+
+  return number;
+}
+
+function extractMacro(macros, name) {
+  if (!Array.isArray(macros)) {
+    return 0;
+  }
+
+  const macro = macros.find(
+    (item) =>
+      typeof item?.name === "string" &&
+      item.name.trim().toLowerCase() === name.toLowerCase()
+  );
+
+  return toNonNegativeNumber(macro?.value);
+}
+
+function getMealName(text) {
+  const cleanText = text.trim();
+
+  if (cleanText.length <= 80) {
+    return cleanText;
+  }
+
+  return `${cleanText.slice(0, 77)}...`;
+}
+
+/* -------------------- AI Meal Analysis -------------------- */
+
 router.post("/analyze", async (req, res) => {
   try {
-    const { text } = req.body;
-    if (!text || typeof text !== "string" || !text.trim()) {
-      return res.status(400).json({ success: false, error: "Meal description is required." });
-    }
+    const { text, mealType } = req.body;
 
-    const profile = await UserProfile.findOne({ userId: req.user.id }).lean();
-
-    let aiResult;
-    try {
-      aiResult = await analyzeMeal(text.trim(), profile);
-    } catch (e) {
-      console.error("Groq analyze error:", e.message);
-      return res.status(503).json({
+    if (
+      typeof text !== "string" ||
+      !text.trim()
+    ) {
+      return res.status(400).json({
         success: false,
-        error: "AI service temporarily unavailable. Please try again later.",
+        error: "Meal description is required.",
       });
     }
 
-    // Deterministic backend safety layer: never rely solely on the AI to
-    // catch allergy conflicts. Merge in any conflicts it may have missed.
-    const extraWarnings = buildAllergyWarnings(text, aiResult.summary, profile?.allergies || []);
-    const existingWarningTexts = new Set(
-      aiResult.feedback.filter((f) => f.type === "warning").map((f) => f.text)
-    );
-    const feedback = [
-      ...aiResult.feedback,
-      ...extraWarnings.filter((w) => !existingWarningTexts.has(w.text)),
+    if (text.trim().length > 1000) {
+      return res.status(400).json({
+        success: false,
+        error: "Meal description is too long.",
+      });
+    }
+
+    const allowedMealTypes = [
+      "Breakfast",
+      "Lunch",
+      "Dinner",
+      "Snack",
     ];
 
-    const tz = resolveTimezone(req);
-    const date = getLocalDateString(tz);
+    const selectedMealType = allowedMealTypes.includes(mealType)
+      ? mealType
+      : "Lunch";
 
-    const meal = new Meal({
+    let aiResult;
+
+    try {
+      aiResult = await analyzeMeal(text.trim());
+    } catch (error) {
+      console.error("Groq meal analysis error:", error.message);
+
+      return res.status(503).json({
+        success: false,
+        error:
+          "AI service is temporarily unavailable. Please try again later.",
+      });
+    }
+
+    if (
+      !aiResult ||
+      typeof aiResult !== "object" ||
+      typeof aiResult.summary !== "string" ||
+      !Array.isArray(aiResult.macros)
+    ) {
+      console.error("Invalid AI result:", aiResult);
+
+      return res.status(502).json({
+        success: false,
+        error: "AI returned an invalid nutrition report. Please try again.",
+      });
+    }
+
+    const macros = {
+      calories: extractMacro(aiResult.macros, "Calories"),
+      protein: extractMacro(aiResult.macros, "Protein"),
+      carbs: extractMacro(aiResult.macros, "Carbs"),
+      fat: extractMacro(aiResult.macros, "Fat"),
+      fiber: extractMacro(aiResult.macros, "Fiber"),
+    };
+
+    const timezone = resolveTimezone(req);
+    const date = getLocalDateString(timezone);
+
+    const meal = await Meal.create({
       userId: req.user.id,
-      name: text.trim().slice(0, 80),
+      name: getMealName(text),
       mealText: text.trim(),
-      calories: aiResult.calories,
-      protein: aiResult.protein,
-      carbs: aiResult.carbs,
-      fat: aiResult.fat,
-      fiber: aiResult.fiber,
-      summary: aiResult.summary,
-      feedback,
-      aiGenerated: true,
       date,
-    });
-    await meal.save();
+      mealType: selectedMealType,
 
-    res.json({
+      calories: macros.calories,
+      protein: macros.protein,
+      carbs: macros.carbs,
+      fat: macros.fat,
+      fiber: macros.fiber,
+
+      feedback: Array.isArray(aiResult.feedback)
+        ? aiResult.feedback
+            .filter(
+              (item) =>
+                item &&
+                typeof item.text === "string"
+            )
+            .map((item) => ({
+              type: ["positive", "warning", "neutral"].includes(item.type)
+                ? item.type
+                : "neutral",
+              text: item.text.trim(),
+            }))
+        : [],
+
+      aiGenerated: true,
+    });
+
+    return res.status(201).json({
       success: true,
       data: {
-        mealId: meal._id,
         summary: aiResult.summary,
-        calories: aiResult.calories,
-        protein: aiResult.protein,
-        carbs: aiResult.carbs,
-        fat: aiResult.fat,
-        fiber: aiResult.fiber,
-        feedback,
-        date,
+        macros: aiResult.macros,
+        feedback: aiResult.feedback || [],
+        mealId: meal._id,
+        date: meal.date,
       },
     });
   } catch (error) {
-    console.error("Error analyzing meal:", error.message);
-    res.status(500).json({ success: false, error: "Failed to analyze meal. Backend error or invalid response." });
+    console.error("Error analyzing meal:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to analyze meal.",
+    });
   }
 });
 
-// =====================================================
-// POST /api/meals/add — manual meal entry (no AI involved).
-// aiGenerated is always false here — it is only ever set true where a
-// meal was actually produced by the AI (see /analyze above and
-// routes/calorie.js's add-meal-text).
-// =====================================================
+/* -------------------- Add Manual / AI Meal -------------------- */
+
 router.post("/add", async (req, res) => {
   try {
-    const { mealName, ingredients, calories, protein, carbs, fat, fiber, mealType } = req.body;
-    const userId = req.user.id;
+    const {
+      mealName,
+      ingredients,
+      calories,
+      mealType,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      summary,
+      feedback,
+      mealText,
+    } = req.body;
 
-    if (!mealName || !String(mealName).trim()) {
-      return res.status(400).json({ error: "Meal name is required." });
+    if (
+      typeof mealName !== "string" ||
+      !mealName.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Meal name is required.",
+      });
     }
 
-    const tz = resolveTimezone(req);
-    const date = getLocalDateString(tz);
+    const allowedMealTypes = [
+      "Breakfast",
+      "Lunch",
+      "Dinner",
+      "Snack",
+    ];
 
-    const meal = new Meal({
-      userId,
-      name: String(mealName).trim(),
-      ingredients: Array.isArray(ingredients) ? ingredients : [],
-      calories: Number(calories) || 0,
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fat: Number(fat) || 0,
-      fiber: Number(fiber) || 0,
-      mealType: mealType || "Lunch",
-      aiGenerated: false,
+    const selectedMealType = allowedMealTypes.includes(mealType)
+      ? mealType
+      : "Lunch";
+
+    const timezone = resolveTimezone(req);
+    const date = getLocalDateString(timezone);
+
+    const safeIngredients = Array.isArray(ingredients)
+      ? ingredients
+          .filter((item) => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .slice(0, 50)
+      : [];
+
+    const meal = await Meal.create({
+      userId: req.user.id,
+
+      name: mealName.trim().slice(0, 150),
+
+      ingredients: safeIngredients,
+
+      calories: toNonNegativeNumber(calories),
+      protein: toNonNegativeNumber(protein),
+      carbs: toNonNegativeNumber(carbs),
+      fat: toNonNegativeNumber(fat),
+      fiber: toNonNegativeNumber(fiber),
+
+      summary:
+        typeof summary === "string"
+          ? summary.trim().slice(0, 1000)
+          : undefined,
+
+      feedback: Array.isArray(feedback)
+        ? feedback
+            .filter((item) => item && typeof item.text === "string")
+            .map((item) => ({
+              type: ["positive", "warning", "neutral"].includes(item.type)
+                ? item.type
+                : "neutral",
+              text: item.text.trim(),
+            }))
+        : [],
+
+      mealText:
+        typeof mealText === "string"
+          ? mealText.trim().slice(0, 1000)
+          : undefined,
+
+      mealType: selectedMealType,
       date,
+      aiGenerated: true,
     });
 
-    await meal.save();
-    res.status(201).json({ success: true, meal });
+    return res.status(201).json({
+      success: true,
+      meal,
+    });
   } catch (error) {
-    console.error("Error adding meal:", error.message);
-    res.status(500).json({ error: "Failed to add meal" });
+    console.error("Error adding meal:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to save meal.",
+    });
   }
 });
 
-// =====================================================
-// GET /api/meals/history — recent meals for the authenticated user,
-// newest first. Backs the Meal History page.
-// =====================================================
+/* -------------------- Meal History -------------------- */
+
 router.get("/history", async (req, res) => {
   try {
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 30));
-    const meals = await Meal.find({ userId: req.user.id })
-      .sort({ createdAt: -1 })
-      .limit(limit)
+    const meals = await Meal.find({
+      userId: req.user.id,
+    })
+      .sort({
+        date: -1,
+        createdAt: -1,
+      })
+      .limit(100)
       .lean();
 
-    res.json({ success: true, meals });
+    return res.json({
+      success: true,
+      meals,
+    });
   } catch (error) {
-    console.error("Error fetching meal history:", error.message);
-    res.status(500).json({ success: false, error: "Failed to load meal history" });
+    console.error("Meal history error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to load meal history.",
+    });
   }
 });
 
-// =====================================================
-// GET /api/meals/:id — a single meal's detail. Ownership is enforced via
-// the userId filter, not by trusting anything from the client.
-// =====================================================
+/* -------------------- Single Meal -------------------- */
+
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, error: "Invalid meal id" });
-    }
+    const meal = await Meal.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+    }).lean();
 
-    const meal = await Meal.findOne({ _id: id, userId: req.user.id }).lean();
     if (!meal) {
-      return res.status(404).json({ success: false, error: "Meal not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Meal not found.",
+      });
     }
 
-    res.json({ success: true, meal });
+    return res.json({
+      success: true,
+      meal,
+    });
   } catch (error) {
-    console.error("Error fetching meal:", error.message);
-    res.status(500).json({ success: false, error: "Failed to load meal" });
+    console.error("Meal detail error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to load meal.",
+    });
   }
 });
 

@@ -1,143 +1,290 @@
 import express from "express";
+
 import Pantry from "../models/pantry.js";
-import UserProfile from "../models/UserProfile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { generateRecipesFromIngredients } from "../utils/groqClient.js";
-import { filterRecipesForAllergies } from "../utils/allergyFilter.js";
 
 const router = express.Router();
 
-// Protect all routes
 router.use(authMiddleware);
 
-// Add new pantry items
+/* -------------------- Validation -------------------- */
+
+const VALID_CATEGORIES = ["kitchen", "fridge"];
+
+function validateItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return {
+      valid: false,
+      message: "Items must be a non-empty array.",
+    };
+  }
+
+  if (items.length > 50) {
+    return {
+      valid: false,
+      message: "You can add at most 50 items at a time.",
+    };
+  }
+
+  for (const item of items) {
+    if (!item || typeof item !== "object") {
+      return {
+        valid: false,
+        message: "Each pantry item must be an object.",
+      };
+    }
+
+    if (
+      typeof item.name !== "string" ||
+      !item.name.trim()
+    ) {
+      return {
+        valid: false,
+        message: "Each item requires a name.",
+      };
+    }
+
+    if (
+      typeof item.quantity !== "string" ||
+      !item.quantity.trim()
+    ) {
+      return {
+        valid: false,
+        message: "Each item requires a quantity.",
+      };
+    }
+
+    if (item.name.trim().length > 100) {
+      return {
+        valid: false,
+        message: "Item name is too long.",
+      };
+    }
+
+    if (item.quantity.trim().length > 100) {
+      return {
+        valid: false,
+        message: "Item quantity is too long.",
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/* -------------------- Add Items -------------------- */
+
 router.post("/add", async (req, res) => {
   try {
     const { category, items } = req.body;
+
+    if (!VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        error: "Category must be 'kitchen' or 'fridge'.",
+      });
+    }
+
+    const validation = validateItems(items);
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.message,
+      });
+    }
+
     const userId = req.user.id;
 
-    if (!category || !items) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-
-    // Validate category
-    if (category !== "kitchen" && category !== "fridge") {
-      return res.status(400).json({ error: "Invalid category. Must be 'kitchen' or 'fridge'." });
-    }
-
     let pantry = await Pantry.findOne({ userId });
-    if (!pantry) pantry = new Pantry({ userId, kitchen: [], fridge: [] });
 
-    pantry[category] = pantry[category].concat(items);
+    if (!pantry) {
+      pantry = new Pantry({
+        userId,
+        kitchen: [],
+        fridge: [],
+      });
+    }
+
+    const cleanedItems = items.map((item) => ({
+      name: item.name.trim(),
+      quantity: item.quantity.trim(),
+    }));
+
+    pantry[category].push(...cleanedItems);
+
     await pantry.save();
 
-    // Return only newly added items
-    res.status(201).json({
-      message: "Items added",
-      items: pantry[category].slice(-items.length)
+    const addedItems = pantry[category].slice(-cleanedItems.length);
+
+    return res.status(201).json({
+      success: true,
+      message: "Items added successfully.",
+      items: addedItems,
     });
-  } catch (err) {
-    console.error("Add pantry error:", err);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error) {
+    console.error("Add pantry error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to add pantry items.",
+    });
   }
 });
 
-// Get pantry items for the authenticated user
+/* -------------------- Get Pantry -------------------- */
+
 router.get("/", async (req, res) => {
   try {
-    const pantry = await Pantry.findOne({ userId: req.user.id });
-    if (!pantry) return res.json({ pantry: { kitchen: [], fridge: [] } });
-    res.json({ pantry });
-  } catch (err) {
-    console.error("Get pantry error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    const pantry = await Pantry.findOne({
+      userId: req.user.id,
+    }).lean();
+
+    if (!pantry) {
+      return res.json({
+        success: true,
+        pantry: {
+          kitchen: [],
+          fridge: [],
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      pantry,
+    });
+  } catch (error) {
+    console.error("Get pantry error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to load pantry.",
+    });
   }
 });
 
-// Delete a specific pantry item (must belong to the authenticated user)
+/* -------------------- Delete Item -------------------- */
+
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
 
-    // Find pantry that belongs to the user and contains this item
     const pantry = await Pantry.findOne({
-      userId,
+      userId: req.user.id,
       $or: [
         { "kitchen._id": id },
-        { "fridge._id": id }
-      ]
+        { "fridge._id": id },
+      ],
     });
 
-    if (!pantry) return res.status(404).json({ error: "Item not found" });
-
-    // Remove the item from both categories (it will be in one)
-    ["kitchen", "fridge"].forEach(cat => {
-      pantry[cat] = pantry[cat].filter(item => item._id.toString() !== id);
-    });
-
-    await pantry.save();
-    res.json({ message: "Item deleted successfully" });
-  } catch (err) {
-    console.error("Delete pantry error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Suggest recipes based on pantry items + the user's dietary profile,
-// using Groq. AI is asked to avoid the user's allergens, but that's never
-// trusted alone — filterRecipesForAllergies() below is a deterministic
-// backend safety layer that drops any recipe still containing a known
-// allergen keyword. This is not medical advice; it's a best-effort filter.
-router.post("/suggest-recipes", async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const pantry = await Pantry.findOne({ userId });
     if (!pantry) {
-      return res.status(400).json({ error: "No pantry items available" });
+      return res.status(404).json({
+        success: false,
+        error: "Pantry item not found.",
+      });
     }
 
-    // Collect ingredient names from both kitchen and fridge
-    const getItemNames = (items) =>
-      items.map(item => (typeof item === "string" ? item : item.name)).filter(Boolean);
+    let deleted = false;
 
-    const kitchenItems = getItemNames(pantry.kitchen || []);
-    const fridgeItems = getItemNames(pantry.fridge || []);
-    const allItems = [...kitchenItems, ...fridgeItems];
+    for (const category of VALID_CATEGORIES) {
+      const originalLength = pantry[category].length;
 
-    if (allItems.length === 0) {
-      return res.status(400).json({ error: "No pantry items available" });
-    }
+      pantry[category] = pantry[category].filter(
+        (item) => item._id.toString() !== id
+      );
 
-    const profile = await UserProfile.findOne({ userId }).lean();
-
-    // Call Groq to generate recipes, personalized to diet/allergies/goals/lifestyle
-    let recipes = await generateRecipesFromIngredients(allItems, profile);
-
-    // Deterministic safety layer on top of the AI's own allergen avoidance
-    const allergies = profile?.allergies || [];
-    if (allergies.length > 0) {
-      const beforeCount = recipes.length;
-      recipes = filterRecipesForAllergies(recipes, allergies);
-      if (recipes.length < beforeCount) {
-        console.log(
-          `Filtered ${beforeCount - recipes.length} recipe(s) that conflicted with user allergies: ${allergies.join(", ")}`
-        );
+      if (pantry[category].length !== originalLength) {
+        deleted = true;
       }
     }
 
-    res.json({
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: "Pantry item not found.",
+      });
+    }
+
+    await pantry.save();
+
+    return res.json({
       success: true,
-      recipes,
-      personalized: Boolean(
-        profile && (profile.dietaryPreferences || allergies.length || (profile.healthGoals || []).length || profile.lifestyle)
-      ),
+      message: "Pantry item deleted successfully.",
     });
-  } catch (err) {
-    console.error("Suggest recipes error:", err);
-    // If Groq fails, return 500
-    res.status(500).json({ error: "Failed to generate recipe suggestions" });
+  } catch (error) {
+    console.error("Delete pantry error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to delete pantry item.",
+    });
+  }
+});
+
+/* -------------------- AI Recipe Suggestions -------------------- */
+
+router.post("/suggest-recipes", async (req, res) => {
+  try {
+    const pantry = await Pantry.findOne({
+      userId: req.user.id,
+    }).lean();
+
+    if (!pantry) {
+      return res.status(400).json({
+        success: false,
+        error: "No pantry items available.",
+      });
+    }
+
+    const getItemNames = (items = []) =>
+      items
+        .map((item) =>
+          typeof item === "string"
+            ? item
+            : item?.name
+        )
+        .filter(
+          (name) =>
+            typeof name === "string" &&
+            name.trim()
+        )
+        .map((name) => name.trim());
+
+    const kitchenItems = getItemNames(pantry.kitchen);
+    const fridgeItems = getItemNames(pantry.fridge);
+
+    const allItems = [
+      ...new Set([
+        ...kitchenItems,
+        ...fridgeItems,
+      ]),
+    ];
+
+    if (allItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "No pantry ingredients available.",
+      });
+    }
+
+    const recipes = await generateRecipesFromIngredients(
+      allItems.slice(0, 50)
+    );
+
+    return res.json({
+      success: true,
+      recipes: Array.isArray(recipes) ? recipes : [],
+    });
+  } catch (error) {
+    console.error("Suggest recipes error:", error);
+
+    return res.status(503).json({
+      success: false,
+      error:
+        "Recipe suggestion service is temporarily unavailable.",
+    });
   }
 });
 
