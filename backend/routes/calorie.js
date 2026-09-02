@@ -1,7 +1,7 @@
 import express from "express";
 
 import Meal from "../models/Meal.js";
-import UserProfile from "../models/UserProfile.js";
+import UserProfile from "../models/Userprofile.js";
 
 import { analyzeMeal } from "../utils/groqClient.js";
 import authMiddleware from "../middleware/authMiddleware.js";

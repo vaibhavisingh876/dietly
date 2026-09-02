@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 
 import Pantry from "../models/pantry.js";
-import UserProfile from "../models/UserProfile.js";
+import UserProfile from "../models/Userprofile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 import { generateRecipesFromIngredients } from "../utils/groqClient.js";

@@ -1,4 +1,4 @@
-// models/UserProfile.js
+// models/Userprofile.js
 //
 // UserProfile is the single source of truth for a user's health/nutrition
 // context. It is populated by the onboarding Questionnaire and can be
@@ -7,8 +7,15 @@
 
 import mongoose from "mongoose";
 
-const DIETARY_PREFERENCES = ["Vegetarian", "Non-Vegetarian", "Vegan", "Pescatarian"];
+const DIETARY_PREFERENCES = [
+  "Vegetarian",
+  "Non-Vegetarian",
+  "Vegan",
+  "Pescatarian",
+];
+
 const ALLERGIES = ["Gluten", "Dairy", "Eggs", "Fish"];
+
 const HEALTH_GOALS = [
   "Weight Loss",
   "More Energy",
@@ -17,7 +24,13 @@ const HEALTH_GOALS = [
   "Better Sleep",
   "Stress Relief",
 ];
-const LIFESTYLES = ["Sedentary", "Moderate", "Active", "Very Active"];
+
+const LIFESTYLES = [
+  "Sedentary",
+  "Moderate",
+  "Active",
+  "Very Active",
+];
 
 const userProfileSchema = new mongoose.Schema(
   {
@@ -25,22 +38,26 @@ const userProfileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // one profile per user
+      unique: true,
       index: true,
     },
+
     age: {
       type: Number,
       min: [0, "Age cannot be negative"],
       max: [120, "Please enter a valid age"],
     },
+
     height: {
-      type: Number, // cm
+      type: Number,
       min: [0, "Height cannot be negative"],
     },
+
     weight: {
-      type: Number, // kg
+      type: Number,
       min: [0, "Weight cannot be negative"],
     },
+
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
@@ -72,9 +89,9 @@ const userProfileSchema = new mongoose.Schema(
       enum: LIFESTYLES,
     },
 
-    // Estimated daily calorie target (Mifflin-St Jeor + activity/goal
-    // adjustment). Recalculated whenever the inputs change. Nullable until
-    // enough profile data exists to compute it.
+    // Estimated daily calorie target.
+    // Recalculated whenever the relevant inputs change.
+    // Nullable until enough profile data exists to compute it.
     calorieGoal: {
       type: Number,
       min: 0,
@@ -91,21 +108,33 @@ const userProfileSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 /**
  * Mifflin-St Jeor BMR, adjusted for activity level, then nudged toward the
- * user's stated goals. This is an ESTIMATE, not medical advice — callers
- * must always present it as such.
+ * user's stated goals.
+ *
+ * This is an ESTIMATE, not medical advice.
  */
-export function estimateCalorieGoal({ age, height, weight, gender, lifestyle, healthGoals }) {
-  if (!age || !height || !weight || !gender) return null;
+export function estimateCalorieGoal({
+  age,
+  height,
+  weight,
+  gender,
+  lifestyle,
+  healthGoals,
+}) {
+  if (!age || !height || !weight || !gender) {
+    return null;
+  }
 
   const bmr =
     gender === "Male"
       ? 10 * weight + 6.25 * height - 5 * age + 5
-      : 10 * weight + 6.25 * height - 5 * age - 161; // Female/Other use the female constant as a neutral default
+      : 10 * weight + 6.25 * height - 5 * age - 161;
 
   const activityMultipliers = {
     Sedentary: 1.2,
@@ -113,15 +142,22 @@ export function estimateCalorieGoal({ age, height, weight, gender, lifestyle, he
     Active: 1.55,
     "Very Active": 1.725,
   };
+
   const multiplier = activityMultipliers[lifestyle] || 1.2;
 
   let tdee = bmr * multiplier;
 
   const goals = healthGoals || [];
-  if (goals.includes("Weight Loss")) tdee -= 400;
-  if (goals.includes("Muscle Gain")) tdee += 300;
 
-  return Math.round(Math.max(1200, tdee)); // floor to avoid suggesting unsafe-low targets
+  if (goals.includes("Weight Loss")) {
+    tdee -= 400;
+  }
+
+  if (goals.includes("Muscle Gain")) {
+    tdee += 300;
+  }
+
+  return Math.round(Math.max(1200, tdee));
 }
 
 userProfileSchema.pre("save", function (next) {
@@ -134,11 +170,20 @@ userProfileSchema.pre("save", function (next) {
     this.isModified("healthGoals")
   ) {
     const estimated = estimateCalorieGoal(this);
-    if (estimated) this.calorieGoal = estimated;
+
+    if (estimated) {
+      this.calorieGoal = estimated;
+    }
   }
+
   next();
 });
 
-export const PROFILE_ENUMS = { DIETARY_PREFERENCES, ALLERGIES, HEALTH_GOALS, LIFESTYLES };
+export const PROFILE_ENUMS = {
+  DIETARY_PREFERENCES,
+  ALLERGIES,
+  HEALTH_GOALS,
+  LIFESTYLES,
+};
 
 export default mongoose.model("UserProfile", userProfileSchema);

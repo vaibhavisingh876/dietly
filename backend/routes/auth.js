@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import UserProfile, {
   PROFILE_ENUMS,
-} from "../models/UserProfile.js";
+} from "../models/Userprofile.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 

@@ -7,6 +7,7 @@ const feedbackSchema = new mongoose.Schema(
       enum: ["positive", "warning", "neutral"],
       default: "neutral",
     },
+
     text: {
       type: String,
       required: true,
@@ -14,7 +15,9 @@ const feedbackSchema = new mongoose.Schema(
       maxlength: 500,
     },
   },
-  { _id: false }
+  {
+    _id: false,
+  }
 );
 
 const mealSchema = new mongoose.Schema(
@@ -39,12 +42,18 @@ const mealSchema = new mongoose.Schema(
       maxlength: 1000,
     },
 
+    summary: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+
     ingredients: {
       type: [String],
       default: [],
       validate: {
-        validator: (arr) => arr.length <= 50,
-        message: "A meal cannot contain more than 50 ingredients.",
+        validator: (items) => items.length <= 50,
+        message: "A meal can contain at most 50 ingredients.",
       },
     },
 
@@ -52,11 +61,14 @@ const mealSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 5000,
-      default: "",
     },
 
+    /*
+     * Stored as YYYY-MM-DD in the user's resolved timezone.
+     */
     date: {
       type: String,
+      required: true,
       match: /^\d{4}-\d{2}-\d{2}$/,
       index: true,
     },
@@ -95,8 +107,8 @@ const mealSchema = new mongoose.Schema(
       type: [feedbackSchema],
       default: [],
       validate: {
-        validator: (arr) => arr.length <= 20,
-        message: "Too many feedback items.",
+        validator: (items) => items.length <= 20,
+        message: "A meal can contain at most 20 feedback items.",
       },
     },
 
@@ -116,6 +128,9 @@ const mealSchema = new mongoose.Schema(
   }
 );
 
+/*
+ * Fast meal-history queries for a specific user.
+ */
 mealSchema.index({
   userId: 1,
   date: -1,

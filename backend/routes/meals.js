@@ -2,9 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 
 import Meal from "../models/Meal.js";
-import UserProfile from "../models/UserProfile.js";
 import { analyzeMeal } from "../utils/groqClient.js";
-import { buildAllergyWarnings } from "../utils/allergyFilter.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
   getLocalDateString,
@@ -26,11 +24,9 @@ const MAX_ANALYSIS_TEXT_LENGTH = 1000;
 const MAX_MEAL_NAME_LENGTH = 150;
 const MAX_MEAL_TEXT_LENGTH = 1000;
 const MAX_SUMMARY_LENGTH = 1000;
-const MAX_RECIPE_LENGTH = 3000;
 const MAX_INGREDIENTS = 50;
 const MAX_FEEDBACK_ITEMS = 20;
 const MAX_FEEDBACK_TEXT_LENGTH = 500;
-const MAX_CALORIES = 10000;
 
 /* -------------------- Helpers -------------------- */
 
@@ -42,10 +38,6 @@ function toNonNegativeNumber(value) {
   }
 
   return number;
-}
-
-function clampNumber(value, max = Infinity) {
-  return Math.min(toNonNegativeNumber(value), max);
 }
 
 function getMealName(text) {
@@ -100,74 +92,6 @@ function getMealType(value) {
     : "Lunch";
 }
 
-function buildMacros(aiResult) {
-  return [
-    {
-      name: "Calories",
-      value: clampNumber(aiResult?.calories, MAX_CALORIES),
-      unit: "kcal",
-    },
-    {
-      name: "Protein",
-      value: toNonNegativeNumber(aiResult?.protein),
-      unit: "g",
-    },
-    {
-      name: "Carbs",
-      value: toNonNegativeNumber(aiResult?.carbs),
-      unit: "g",
-    },
-    {
-      name: "Fat",
-      value: toNonNegativeNumber(aiResult?.fat),
-      unit: "g",
-    },
-    {
-      name: "Fiber",
-      value: toNonNegativeNumber(aiResult?.fiber),
-      unit: "g",
-    },
-  ];
-}
-
-function mergeFeedback(baseFeedback, allergyWarnings) {
-  const combined = [
-    ...(Array.isArray(baseFeedback) ? baseFeedback : []),
-    ...(Array.isArray(allergyWarnings) ? allergyWarnings : []),
-  ];
-
-  const seen = new Set();
-
-  return combined
-    .filter((item) => {
-      if (
-        !item ||
-        typeof item.text !== "string" ||
-        !item.text.trim()
-      ) {
-        return false;
-      }
-
-      const key = item.text.trim().toLowerCase();
-
-      if (seen.has(key)) {
-        return false;
-      }
-
-      seen.add(key);
-      return true;
-    })
-    .slice(0, MAX_FEEDBACK_ITEMS)
-    .map((item) => ({
-      type: ["positive", "warning", "neutral"].includes(item.type)
-        ? item.type
-        : "neutral",
-      text: item.text
-        .trim()
-        .slice(0, MAX_FEEDBACK_TEXT_LENGTH),
-    }));
-}
-
 /* -------------------- AI Meal Analysis -------------------- */
 
 router.post("/analyze", async (req, res) => {
@@ -193,21 +117,12 @@ router.post("/analyze", async (req, res) => {
 
     const selectedMealType = getMealType(mealType);
 
-    /* ---------- Load user profile ---------- */
-
-    const profile = await UserProfile.findOne({
-      userId: req.user.id,
-    }).lean();
-
     /* ---------- AI ---------- */
 
     let aiResult;
 
     try {
-      aiResult = await analyzeMeal(
-        cleanText,
-        profile || null
-      );
+      aiResult = await analyzeMeal(cleanText);
     } catch (error) {
       console.error(
         "Groq meal analysis error:",
@@ -237,31 +152,59 @@ router.post("/analyze", async (req, res) => {
       });
     }
 
-    const macros = buildMacros(aiResult);
+    const macros = {
+      calories: toNonNegativeNumber(aiResult.calories),
+      protein: toNonNegativeNumber(aiResult.protein),
+      carbs: toNonNegativeNumber(aiResult.carbs),
+      fat: toNonNegativeNumber(aiResult.fat),
+      fiber: toNonNegativeNumber(aiResult.fiber),
+    };
 
-    const aiFeedback = sanitizeFeedback(aiResult.feedback);
+    const feedback = sanitizeFeedback(aiResult.feedback);
 
-    /* ---------- Allergy warnings ---------- */
+    /*
+     * The AI client returns nutrition values as direct numeric fields:
+     *
+     * {
+     *   calories: 420,
+     *   protein: 32,
+     *   carbs: 48,
+     *   fat: 15,
+     *   fiber: 8
+     * }
+     *
+     * The frontend, however, expects a macros array.
+     * So we store numeric fields in MongoDB and create a
+     * backwards-compatible macros array for the frontend response.
+     */
 
-    let allergyWarnings = [];
-
-    try {
-      allergyWarnings = buildAllergyWarnings(
-        cleanText,
-        aiResult.summary,
-        profile?.allergies || []
-      );
-    } catch (error) {
-      console.error(
-        "Allergy warning generation error:",
-        error?.message || error
-      );
-    }
-
-    const feedback = mergeFeedback(
-      aiFeedback,
-      allergyWarnings
-    );
+    const macroList = [
+      {
+        name: "Calories",
+        value: macros.calories,
+        unit: "kcal",
+      },
+      {
+        name: "Protein",
+        value: macros.protein,
+        unit: "g",
+      },
+      {
+        name: "Carbs",
+        value: macros.carbs,
+        unit: "g",
+      },
+      {
+        name: "Fat",
+        value: macros.fat,
+        unit: "g",
+      },
+      {
+        name: "Fiber",
+        value: macros.fiber,
+        unit: "g",
+      },
+    ];
 
     /* ---------- Save ---------- */
 
@@ -279,11 +222,11 @@ router.post("/analyze", async (req, res) => {
 
       mealType: selectedMealType,
 
-      calories: macros[0].value,
-      protein: macros[1].value,
-      carbs: macros[2].value,
-      fat: macros[3].value,
-      fiber: macros[4].value,
+      calories: macros.calories,
+      protein: macros.protein,
+      carbs: macros.carbs,
+      fat: macros.fat,
+      fiber: macros.fiber,
 
       summary: aiResult.summary
         .trim()
@@ -300,7 +243,7 @@ router.post("/analyze", async (req, res) => {
       data: {
         summary: meal.summary,
 
-        macros,
+        macros: macroList,
 
         feedback,
 
@@ -403,7 +346,7 @@ router.post("/add", async (req, res) => {
 
     const safeRecipe =
       typeof recipe === "string"
-        ? recipe.trim().slice(0, MAX_RECIPE_LENGTH)
+        ? recipe.trim().slice(0, 3000)
         : undefined;
 
     const meal = await Meal.create({
@@ -413,7 +356,7 @@ router.post("/add", async (req, res) => {
 
       ingredients: safeIngredients,
 
-      calories: clampNumber(calories, MAX_CALORIES),
+      calories: toNonNegativeNumber(calories),
       protein: toNonNegativeNumber(protein),
       carbs: toNonNegativeNumber(carbs),
       fat: toNonNegativeNumber(fat),

@@ -2,7 +2,7 @@ import express from "express";
 
 import MealEntry from "../models/MealEntry.js";
 import Meal from "../models/Meal.js";
-import UserProfile from "../models/UserProfile.js";
+import UserProfile from "../models/Userprofile.js";
 import Progress from "../models/progress.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
