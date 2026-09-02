@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 
 import Meal from "../models/Meal.js";
 import { analyzeMeal } from "../utils/groqClient.js";
@@ -11,6 +12,21 @@ import {
 const router = express.Router();
 
 router.use(authMiddleware);
+
+const ALLOWED_MEAL_TYPES = [
+  "Breakfast",
+  "Lunch",
+  "Dinner",
+  "Snack",
+];
+
+const MAX_ANALYSIS_TEXT_LENGTH = 1000;
+const MAX_MEAL_NAME_LENGTH = 150;
+const MAX_MEAL_TEXT_LENGTH = 1000;
+const MAX_SUMMARY_LENGTH = 1000;
+const MAX_INGREDIENTS = 50;
+const MAX_FEEDBACK_ITEMS = 20;
+const MAX_FEEDBACK_TEXT_LENGTH = 500;
 
 /* -------------------- Helpers -------------------- */
 
@@ -48,46 +64,84 @@ function getMealName(text) {
   return `${cleanText.slice(0, 77)}...`;
 }
 
+function sanitizeFeedback(feedback) {
+  if (!Array.isArray(feedback)) {
+    return [];
+  }
+
+  return feedback
+    .filter(
+      (item) =>
+        item &&
+        typeof item.text === "string" &&
+        item.text.trim()
+    )
+    .slice(0, MAX_FEEDBACK_ITEMS)
+    .map((item) => ({
+      type: ["positive", "warning", "neutral"].includes(item.type)
+        ? item.type
+        : "neutral",
+
+      text: item.text
+        .trim()
+        .slice(0, MAX_FEEDBACK_TEXT_LENGTH),
+    }));
+}
+
+function sanitizeIngredients(ingredients) {
+  if (!Array.isArray(ingredients)) {
+    return [];
+  }
+
+  return ingredients
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, MAX_INGREDIENTS);
+}
+
+function getMealType(value) {
+  return ALLOWED_MEAL_TYPES.includes(value)
+    ? value
+    : "Lunch";
+}
+
 /* -------------------- AI Meal Analysis -------------------- */
 
 router.post("/analyze", async (req, res) => {
   try {
     const { text, mealType } = req.body;
 
-    if (
-      typeof text !== "string" ||
-      !text.trim()
-    ) {
+    if (typeof text !== "string" || !text.trim()) {
       return res.status(400).json({
         success: false,
         error: "Meal description is required.",
       });
     }
 
-    if (text.trim().length > 1000) {
+    const cleanText = text.trim();
+
+    if (cleanText.length > MAX_ANALYSIS_TEXT_LENGTH) {
       return res.status(400).json({
         success: false,
-        error: "Meal description is too long.",
+        error:
+          `Meal description must be ${MAX_ANALYSIS_TEXT_LENGTH} characters or less.`,
       });
     }
 
-    const allowedMealTypes = [
-      "Breakfast",
-      "Lunch",
-      "Dinner",
-      "Snack",
-    ];
+    const selectedMealType = getMealType(mealType);
 
-    const selectedMealType = allowedMealTypes.includes(mealType)
-      ? mealType
-      : "Lunch";
+    /* ---------- AI ---------- */
 
     let aiResult;
 
     try {
-      aiResult = await analyzeMeal(text.trim());
+      aiResult = await analyzeMeal(cleanText);
     } catch (error) {
-      console.error("Groq meal analysis error:", error.message);
+      console.error(
+        "Groq meal analysis error:",
+        error?.message || error
+      );
 
       return res.status(503).json({
         success: false,
@@ -96,17 +150,20 @@ router.post("/analyze", async (req, res) => {
       });
     }
 
+    /* ---------- Validate AI response ---------- */
+
     if (
       !aiResult ||
       typeof aiResult !== "object" ||
       typeof aiResult.summary !== "string" ||
       !Array.isArray(aiResult.macros)
     ) {
-      console.error("Invalid AI result:", aiResult);
+      console.error("Invalid AI meal result:", aiResult);
 
       return res.status(502).json({
         success: false,
-        error: "AI returned an invalid nutrition report. Please try again.",
+        error:
+          "AI returned an invalid nutrition report. Please try again.",
       });
     }
 
@@ -118,14 +175,22 @@ router.post("/analyze", async (req, res) => {
       fiber: extractMacro(aiResult.macros, "Fiber"),
     };
 
+    const feedback = sanitizeFeedback(aiResult.feedback);
+
+    /* ---------- Save ---------- */
+
     const timezone = resolveTimezone(req);
     const date = getLocalDateString(timezone);
 
     const meal = await Meal.create({
       userId: req.user.id,
-      name: getMealName(text),
-      mealText: text.trim(),
+
+      name: getMealName(cleanText),
+
+      mealText: cleanText,
+
       date,
+
       mealType: selectedMealType,
 
       calories: macros.calories,
@@ -134,31 +199,27 @@ router.post("/analyze", async (req, res) => {
       fat: macros.fat,
       fiber: macros.fiber,
 
-      feedback: Array.isArray(aiResult.feedback)
-        ? aiResult.feedback
-            .filter(
-              (item) =>
-                item &&
-                typeof item.text === "string"
-            )
-            .map((item) => ({
-              type: ["positive", "warning", "neutral"].includes(item.type)
-                ? item.type
-                : "neutral",
-              text: item.text.trim(),
-            }))
-        : [],
+      summary: aiResult.summary
+        .trim()
+        .slice(0, MAX_SUMMARY_LENGTH),
+
+      feedback,
 
       aiGenerated: true,
     });
 
     return res.status(201).json({
       success: true,
+
       data: {
-        summary: aiResult.summary,
+        summary: meal.summary,
+
         macros: aiResult.macros,
-        feedback: aiResult.feedback || [],
+
+        feedback,
+
         mealId: meal._id,
+
         date: meal.date,
       },
     });
@@ -188,6 +249,8 @@ router.post("/add", async (req, res) => {
       summary,
       feedback,
       mealText,
+      recipe,
+      aiGenerated,
     } = req.body;
 
     if (
@@ -200,32 +263,67 @@ router.post("/add", async (req, res) => {
       });
     }
 
-    const allowedMealTypes = [
-      "Breakfast",
-      "Lunch",
-      "Dinner",
-      "Snack",
-    ];
+    const cleanMealName = mealName.trim();
 
-    const selectedMealType = allowedMealTypes.includes(mealType)
-      ? mealType
-      : "Lunch";
+    if (cleanMealName.length > MAX_MEAL_NAME_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        error:
+          `Meal name must be ${MAX_MEAL_NAME_LENGTH} characters or less.`,
+      });
+    }
+
+    if (
+      mealText !== undefined &&
+      typeof mealText !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Meal description must be text.",
+      });
+    }
+
+    if (
+      typeof mealText === "string" &&
+      mealText.trim().length > MAX_MEAL_TEXT_LENGTH
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          `Meal description must be ${MAX_MEAL_TEXT_LENGTH} characters or less.`,
+      });
+    }
+
+    const selectedMealType = getMealType(mealType);
 
     const timezone = resolveTimezone(req);
     const date = getLocalDateString(timezone);
 
-    const safeIngredients = Array.isArray(ingredients)
-      ? ingredients
-          .filter((item) => typeof item === "string")
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .slice(0, 50)
-      : [];
+    const safeIngredients =
+      sanitizeIngredients(ingredients);
+
+    const safeFeedback =
+      sanitizeFeedback(feedback);
+
+    const safeSummary =
+      typeof summary === "string"
+        ? summary.trim().slice(0, MAX_SUMMARY_LENGTH)
+        : undefined;
+
+    const safeMealText =
+      typeof mealText === "string"
+        ? mealText.trim().slice(0, MAX_MEAL_TEXT_LENGTH)
+        : undefined;
+
+    const safeRecipe =
+      typeof recipe === "string"
+        ? recipe.trim().slice(0, 3000)
+        : undefined;
 
     const meal = await Meal.create({
       userId: req.user.id,
 
-      name: mealName.trim().slice(0, 150),
+      name: cleanMealName,
 
       ingredients: safeIngredients,
 
@@ -235,30 +333,19 @@ router.post("/add", async (req, res) => {
       fat: toNonNegativeNumber(fat),
       fiber: toNonNegativeNumber(fiber),
 
-      summary:
-        typeof summary === "string"
-          ? summary.trim().slice(0, 1000)
-          : undefined,
+      summary: safeSummary,
 
-      feedback: Array.isArray(feedback)
-        ? feedback
-            .filter((item) => item && typeof item.text === "string")
-            .map((item) => ({
-              type: ["positive", "warning", "neutral"].includes(item.type)
-                ? item.type
-                : "neutral",
-              text: item.text.trim(),
-            }))
-        : [],
+      feedback: safeFeedback,
 
-      mealText:
-        typeof mealText === "string"
-          ? mealText.trim().slice(0, 1000)
-          : undefined,
+      mealText: safeMealText,
+
+      recipe: safeRecipe,
 
       mealType: selectedMealType,
+
       date,
-      aiGenerated: true,
+
+      aiGenerated: Boolean(aiGenerated),
     });
 
     return res.status(201).json({
@@ -307,8 +394,17 @@ router.get("/history", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid meal ID.",
+      });
+    }
+
     const meal = await Meal.findOne({
-      _id: req.params.id,
+      _id: id,
       userId: req.user.id,
     }).lean();
 

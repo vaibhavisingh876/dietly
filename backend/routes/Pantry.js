@@ -1,101 +1,80 @@
 import express from "express";
+import mongoose from "mongoose";
 
 import Pantry from "../models/pantry.js";
+import UserProfile from "../models/UserProfile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+
 import { generateRecipesFromIngredients } from "../utils/groqClient.js";
+import { filterRecipesForAllergies } from "../utils/allergyFilter.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-/* -------------------- Validation -------------------- */
+const VALID_CATEGORIES = new Set(["kitchen", "fridge"]);
+const MAX_ITEMS_PER_REQUEST = 50;
+const MAX_ITEM_NAME_LENGTH = 100;
+const MAX_QUANTITY_LENGTH = 100;
 
-const VALID_CATEGORIES = ["kitchen", "fridge"];
-
-function validateItems(items) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return {
-      valid: false,
-      message: "Items must be a non-empty array.",
-    };
-  }
-
-  if (items.length > 50) {
-    return {
-      valid: false,
-      message: "You can add at most 50 items at a time.",
-    };
-  }
-
-  for (const item of items) {
-    if (!item || typeof item !== "object") {
-      return {
-        valid: false,
-        message: "Each pantry item must be an object.",
-      };
-    }
-
-    if (
-      typeof item.name !== "string" ||
-      !item.name.trim()
-    ) {
-      return {
-        valid: false,
-        message: "Each item requires a name.",
-      };
-    }
-
-    if (
-      typeof item.quantity !== "string" ||
-      !item.quantity.trim()
-    ) {
-      return {
-        valid: false,
-        message: "Each item requires a quantity.",
-      };
-    }
-
-    if (item.name.trim().length > 100) {
-      return {
-        valid: false,
-        message: "Item name is too long.",
-      };
-    }
-
-    if (item.quantity.trim().length > 100) {
-      return {
-        valid: false,
-        message: "Item quantity is too long.",
-      };
-    }
-  }
-
-  return { valid: true };
-}
-
-/* -------------------- Add Items -------------------- */
-
+// Add pantry items
 router.post("/add", async (req, res) => {
   try {
+    const userId = req.user.id;
     const { category, items } = req.body;
 
-    if (!VALID_CATEGORIES.includes(category)) {
+    if (!VALID_CATEGORIES.has(category)) {
       return res.status(400).json({
-        success: false,
-        error: "Category must be 'kitchen' or 'fridge'.",
+        error: "Invalid category. Must be 'kitchen' or 'fridge'.",
       });
     }
 
-    const validation = validateItems(items);
-
-    if (!validation.valid) {
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
-        success: false,
-        error: validation.message,
+        error: "At least one pantry item is required.",
       });
     }
 
-    const userId = req.user.id;
+    if (items.length > MAX_ITEMS_PER_REQUEST) {
+      return res.status(400).json({
+        error: `You can add at most ${MAX_ITEMS_PER_REQUEST} items at once.`,
+      });
+    }
+
+    const cleanedItems = [];
+
+    for (const item of items) {
+      const name = typeof item?.name === "string"
+        ? item.name.trim()
+        : "";
+
+      const quantity = typeof item?.quantity === "string"
+        ? item.quantity.trim()
+        : "";
+
+      if (!name || !quantity) {
+        return res.status(400).json({
+          error: "Every pantry item must have a name and quantity.",
+        });
+      }
+
+      if (name.length > MAX_ITEM_NAME_LENGTH) {
+        return res.status(400).json({
+          error: `Item name must be ${MAX_ITEM_NAME_LENGTH} characters or less.`,
+        });
+      }
+
+      if (quantity.length > MAX_QUANTITY_LENGTH) {
+        return res.status(400).json({
+          error: `Quantity must be ${MAX_QUANTITY_LENGTH} characters or less.`,
+        });
+      }
+
+      cleanedItems.push({
+        name,
+        quantity,
+      });
+    }
 
     let pantry = await Pantry.findOne({ userId });
 
@@ -107,11 +86,6 @@ router.post("/add", async (req, res) => {
       });
     }
 
-    const cleanedItems = items.map((item) => ({
-      name: item.name.trim(),
-      quantity: item.quantity.trim(),
-    }));
-
     pantry[category].push(...cleanedItems);
 
     await pantry.save();
@@ -119,7 +93,6 @@ router.post("/add", async (req, res) => {
     const addedItems = pantry[category].slice(-cleanedItems.length);
 
     return res.status(201).json({
-      success: true,
       message: "Items added successfully.",
       items: addedItems,
     });
@@ -127,14 +100,12 @@ router.post("/add", async (req, res) => {
     console.error("Add pantry error:", error);
 
     return res.status(500).json({
-      success: false,
-      error: "Failed to add pantry items.",
+      error: "Unable to add pantry items.",
     });
   }
 });
 
-/* -------------------- Get Pantry -------------------- */
-
+// Get authenticated user's pantry
 router.get("/", async (req, res) => {
   try {
     const pantry = await Pantry.findOne({
@@ -143,7 +114,6 @@ router.get("/", async (req, res) => {
 
     if (!pantry) {
       return res.json({
-        success: true,
         pantry: {
           kitchen: [],
           fridge: [],
@@ -152,27 +122,34 @@ router.get("/", async (req, res) => {
     }
 
     return res.json({
-      success: true,
-      pantry,
+      pantry: {
+        kitchen: Array.isArray(pantry.kitchen) ? pantry.kitchen : [],
+        fridge: Array.isArray(pantry.fridge) ? pantry.fridge : [],
+      },
     });
   } catch (error) {
     console.error("Get pantry error:", error);
 
     return res.status(500).json({
-      success: false,
-      error: "Failed to load pantry.",
+      error: "Unable to load pantry.",
     });
   }
 });
 
-/* -------------------- Delete Item -------------------- */
-
+// Delete a pantry item belonging to the authenticated user
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "Invalid pantry item ID.",
+      });
+    }
 
     const pantry = await Pantry.findOne({
-      userId: req.user.id,
+      userId,
       $or: [
         { "kitchen._id": id },
         { "fridge._id": id },
@@ -181,14 +158,13 @@ router.delete("/:id", async (req, res) => {
 
     if (!pantry) {
       return res.status(404).json({
-        success: false,
         error: "Pantry item not found.",
       });
     }
 
-    let deleted = false;
+    let removed = false;
 
-    for (const category of VALID_CATEGORIES) {
+    for (const category of ["kitchen", "fridge"]) {
       const originalLength = pantry[category].length;
 
       pantry[category] = pantry[category].filter(
@@ -196,13 +172,12 @@ router.delete("/:id", async (req, res) => {
       );
 
       if (pantry[category].length !== originalLength) {
-        deleted = true;
+        removed = true;
       }
     }
 
-    if (!deleted) {
+    if (!removed) {
       return res.status(404).json({
-        success: false,
         error: "Pantry item not found.",
       });
     }
@@ -210,80 +185,111 @@ router.delete("/:id", async (req, res) => {
     await pantry.save();
 
     return res.json({
-      success: true,
-      message: "Pantry item deleted successfully.",
+      message: "Item deleted successfully.",
     });
   } catch (error) {
     console.error("Delete pantry error:", error);
 
     return res.status(500).json({
-      success: false,
-      error: "Failed to delete pantry item.",
+      error: "Unable to delete pantry item.",
     });
   }
 });
 
-/* -------------------- AI Recipe Suggestions -------------------- */
-
+// Generate AI recipes from pantry
 router.post("/suggest-recipes", async (req, res) => {
   try {
+    const userId = req.user.id;
+
     const pantry = await Pantry.findOne({
-      userId: req.user.id,
+      userId,
     }).lean();
 
     if (!pantry) {
       return res.status(400).json({
-        success: false,
         error: "No pantry items available.",
       });
     }
 
-    const getItemNames = (items = []) =>
-      items
+    const getItemNames = (items) =>
+      (Array.isArray(items) ? items : [])
         .map((item) =>
           typeof item === "string"
-            ? item
-            : item?.name
+            ? item.trim()
+            : typeof item?.name === "string"
+              ? item.name.trim()
+              : ""
         )
-        .filter(
-          (name) =>
-            typeof name === "string" &&
-            name.trim()
-        )
-        .map((name) => name.trim());
+        .filter(Boolean);
 
     const kitchenItems = getItemNames(pantry.kitchen);
     const fridgeItems = getItemNames(pantry.fridge);
 
-    const allItems = [
-      ...new Set([
-        ...kitchenItems,
-        ...fridgeItems,
-      ]),
-    ];
+    const allItems = [...kitchenItems, ...fridgeItems];
 
     if (allItems.length === 0) {
       return res.status(400).json({
-        success: false,
-        error: "No pantry ingredients available.",
+        error: "No pantry items available.",
       });
     }
 
-    const recipes = await generateRecipesFromIngredients(
-      allItems.slice(0, 50)
+    // Avoid sending an unnecessarily huge ingredient list to the AI.
+    const uniqueItems = [...new Set(allItems)].slice(0, 100);
+
+    const profile = await UserProfile.findOne({
+      userId,
+    }).lean();
+
+    let recipes = await generateRecipesFromIngredients(
+      uniqueItems,
+      profile
     );
+
+    if (!Array.isArray(recipes)) {
+      recipes = [];
+    }
+
+    const allergies = Array.isArray(profile?.allergies)
+      ? profile.allergies
+      : [];
+
+    if (allergies.length > 0 && recipes.length > 0) {
+      const beforeCount = recipes.length;
+
+      recipes = filterRecipesForAllergies(
+        recipes,
+        allergies
+      );
+
+      if (recipes.length < beforeCount) {
+        console.log(
+          `Filtered ${
+            beforeCount - recipes.length
+          } recipe(s) because of user allergies: ${allergies.join(", ")}`
+        );
+      }
+    }
 
     return res.json({
       success: true,
-      recipes: Array.isArray(recipes) ? recipes : [],
+      recipes,
+      personalized: Boolean(
+        profile &&
+          (
+            profile.dietaryPreferences ||
+            allergies.length > 0 ||
+            (Array.isArray(profile.healthGoals) &&
+              profile.healthGoals.length > 0) ||
+            profile.lifestyle
+          )
+      ),
     });
   } catch (error) {
     console.error("Suggest recipes error:", error);
 
-    return res.status(503).json({
-      success: false,
+    return res.status(500).json({
       error:
-        "Recipe suggestion service is temporarily unavailable.",
+        "Failed to generate recipe suggestions. Please try again.",
     });
   }
 });

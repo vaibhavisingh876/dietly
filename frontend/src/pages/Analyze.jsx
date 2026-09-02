@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import MealForm from "../components/MealForm.jsx";
 import api from "../api/api";
-import Nav from "../components/Nav.jsx";
 
 import {
   Zap,
@@ -38,25 +37,38 @@ const PIE_COLORS = [
   "#f97316",
 ];
 
+const MAX_MEAL_LENGTH = 1000;
+
 export default function Analyze() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const analyze = async (mealText) => {
+    const cleanedText = String(mealText || "").trim();
+
+    if (!cleanedText) {
+      setError("Please describe your meal first.");
+      return;
+    }
+
+    if (cleanedText.length > MAX_MEAL_LENGTH) {
+      setError(
+        `Meal description must be ${MAX_MEAL_LENGTH} characters or less.`
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
       const response = await api.post("/meals/analyze", {
-        text: mealText,
+        text: cleanedText,
       });
 
-      if (
-        !response.data ||
-        !response.data.data
-      ) {
+      if (!response.data?.data) {
         throw new Error("Invalid response from server.");
       }
 
@@ -85,8 +97,7 @@ export default function Analyze() {
       )
       .map((macro) => ({
         name: macro.name,
-        value:
-          Number.parseFloat(macro.value) || 0,
+        value: Number.parseFloat(macro.value) || 0,
       })) || [];
 
   const pieData =
@@ -98,14 +109,11 @@ export default function Analyze() {
       )
       .map((macro) => ({
         name: macro.name,
-        value:
-          Number.parseFloat(macro.value) || 0,
+        value: Number.parseFloat(macro.value) || 0,
       })) || [];
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
-      <Nav />
-
       <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
         <div className="text-center pt-8">
           <h1 className="text-5xl font-extrabold text-gray-900">
@@ -119,7 +127,6 @@ export default function Analyze() {
         </div>
 
         {/* Meal Form */}
-
         <div className="bg-white p-8 rounded-3xl shadow-2xl border-t-4 border-green-600">
           <MealForm
             onSubmit={analyze}
@@ -128,14 +135,13 @@ export default function Analyze() {
 
           {error && (
             <div className="mt-6 p-4 text-red-700 bg-red-100 rounded-xl flex items-center gap-2">
-              <XCircle className="w-5 h-5" />
+              <XCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
         </div>
 
         {/* Loading */}
-
         {loading && (
           <div className="text-center p-12 text-xl font-medium text-green-700 bg-white rounded-3xl shadow-xl border border-green-200">
             <Loader2 className="w-10 h-10 text-green-600 mx-auto mb-4 animate-spin" />
@@ -145,7 +151,6 @@ export default function Analyze() {
         )}
 
         {/* Result */}
-
         {result && !loading && (
           <div className="bg-white rounded-3xl shadow-2xl border-t-8 border-emerald-600 overflow-hidden">
             <div className="p-8 border-b border-gray-100 bg-emerald-50 flex justify-between items-center flex-wrap gap-4">
@@ -164,7 +169,6 @@ export default function Analyze() {
 
             <div className="p-8 space-y-12">
               {/* Summary */}
-
               {result.summary && (
                 <div className="bg-green-100/70 p-6 rounded-2xl border border-green-200 shadow-inner">
                   <p className="text-gray-700 text-xl leading-relaxed italic">
@@ -178,7 +182,6 @@ export default function Analyze() {
               )}
 
               {/* Nutritional Breakdown */}
-
               {barData.length > 0 && (
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
@@ -215,7 +218,6 @@ export default function Analyze() {
               )}
 
               {/* Macronutrient Pie Chart */}
-
               {pieData.length > 0 && (
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
@@ -259,7 +261,6 @@ export default function Analyze() {
               )}
 
               {/* Feedback */}
-
               {Array.isArray(result.feedback) &&
                 result.feedback.length > 0 && (
                   <div>
@@ -273,11 +274,9 @@ export default function Analyze() {
                           <div
                             key={index}
                             className={`p-4 rounded-xl border ${
-                              item.type ===
-                              "positive"
+                              item.type === "positive"
                                 ? "bg-green-50 border-green-200 text-green-800"
-                                : item.type ===
-                                  "warning"
+                                : item.type === "warning"
                                 ? "bg-amber-50 border-amber-200 text-amber-800"
                                 : "bg-gray-50 border-gray-200 text-gray-800"
                             }`}
@@ -289,6 +288,15 @@ export default function Analyze() {
                     </div>
                   </div>
                 )}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="px-8 pb-8">
+              <p className="text-sm text-gray-500 text-center">
+                AI-generated nutrition estimates are for
+                informational purposes only and should not
+                replace professional medical or dietary advice.
+              </p>
             </div>
           </div>
         )}

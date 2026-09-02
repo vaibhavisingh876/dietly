@@ -7,12 +7,17 @@ const feedbackSchema = new mongoose.Schema(
       enum: ["positive", "warning", "neutral"],
       default: "neutral",
     },
+
     text: {
       type: String,
       required: true,
+      trim: true,
+      maxlength: 500,
     },
   },
-  { _id: false }
+  {
+    _id: false,
+  }
 );
 
 const mealSchema = new mongoose.Schema(
@@ -40,15 +45,24 @@ const mealSchema = new mongoose.Schema(
     ingredients: {
       type: [String],
       default: [],
+      validate: {
+        validator: (items) => items.length <= 50,
+        message: "A meal can contain at most 50 ingredients.",
+      },
     },
 
     recipe: {
       type: String,
       trim: true,
+      maxlength: 5000,
     },
 
+    /*
+     * Stored as YYYY-MM-DD in the user's resolved timezone.
+     */
     date: {
       type: String,
+      required: true,
       match: /^\d{4}-\d{2}-\d{2}$/,
       index: true,
     },
@@ -86,6 +100,10 @@ const mealSchema = new mongoose.Schema(
     feedback: {
       type: [feedbackSchema],
       default: [],
+      validate: {
+        validator: (items) => items.length <= 20,
+        message: "A meal can contain at most 20 feedback items.",
+      },
     },
 
     mealType: {
@@ -99,13 +117,23 @@ const mealSchema = new mongoose.Schema(
       default: false,
     },
   },
+
   {
     timestamps: true,
   }
 );
 
-// Makes fetching a user's meal history efficient.
-mealSchema.index({ userId: 1, date: -1 });
-mealSchema.index({ userId: 1, createdAt: -1 });
+/*
+ * Fast meal-history queries for a specific user.
+ */
+mealSchema.index({
+  userId: 1,
+  date: -1,
+});
+
+mealSchema.index({
+  userId: 1,
+  createdAt: -1,
+});
 
 export default mongoose.model("Meal", mealSchema);

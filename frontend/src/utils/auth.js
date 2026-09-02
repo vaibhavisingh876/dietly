@@ -1,43 +1,115 @@
-// Centralized auth storage helpers.
-//
-// "Remember me" decides where the session lives:
-//   - persist = true  -> localStorage (survives browser restarts)
-//   - persist = false -> sessionStorage (cleared when the tab/browser closes)
-//
-// Every reader checks both stores so it doesn't matter which one an
-// active session is sitting in.
-
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
-export function saveAuth({ token, user, persist = true }) {
-  const store = persist ? localStorage : sessionStorage;
-  const other = persist ? sessionStorage : localStorage;
+/**
+ * Save authentication data in either localStorage
+ * or sessionStorage.
+ *
+ * persist = true  -> stays logged in after browser restart
+ * persist = false -> cleared when browser session ends
+ */
+export function saveAuth({
+  token,
+  user,
+  persist = true,
+}) {
+  if (!token) {
+    throw new Error("Authentication token is required.");
+  }
+
+  const store = persist
+    ? localStorage
+    : sessionStorage;
+
+  const otherStore = persist
+    ? sessionStorage
+    : localStorage;
 
   store.setItem(TOKEN_KEY, token);
-  store.setItem(USER_KEY, JSON.stringify(user));
 
-  // Make sure a session isn't left behind in the other store from a
-  // previous login with a different "remember me" choice.
-  other.removeItem(TOKEN_KEY);
-  other.removeItem(USER_KEY);
+  if (user !== undefined && user !== null) {
+    store.setItem(
+      USER_KEY,
+      JSON.stringify(user)
+    );
+  } else {
+    store.removeItem(USER_KEY);
+  }
+
+  // Prevent stale authentication data from the
+  // opposite storage mechanism.
+  otherStore.removeItem(TOKEN_KEY);
+  otherStore.removeItem(USER_KEY);
+
+  window.dispatchEvent(
+    new Event("authChanged")
+  );
 }
 
+/**
+ * Returns the currently stored token.
+ */
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  return (
+    localStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(TOKEN_KEY) ||
+    null
+  );
 }
 
+/**
+ * Returns the currently stored user.
+ *
+ * Invalid/corrupted JSON is safely ignored.
+ */
 export function getUser() {
-  const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
-  return raw ? JSON.parse(raw) : null;
+  const raw =
+    localStorage.getItem(USER_KEY) ||
+    sessionStorage.getItem(USER_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn(
+      "Invalid stored user data. Clearing it.",
+      error
+    );
+
+    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
+
+    return null;
+  }
 }
 
-export function logout() {
+/**
+ * Returns whether the user is authenticated.
+ */
+export function isAuthenticated() {
+  return Boolean(getToken());
+}
+
+/**
+ * Clears all authentication data.
+ */
+export function logout({
+  redirect = true,
+} = {}) {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(USER_KEY);
 
-  window.dispatchEvent(new Event("authChanged"));
-  window.location.href = "/login";
+  window.dispatchEvent(
+    new Event("authChanged")
+  );
+
+  if (redirect) {
+    window.location.href = "/login";
+  }
 }

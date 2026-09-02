@@ -1,89 +1,218 @@
 // utils/allergyFilter.js
-//
-// Deterministic, keyword-based allergen safety net. The AI is asked to
-// respect the user's allergies, but LLM output is never a reliable sole
-// safety layer for allergy avoidance — so this module gives us a simple,
-// predictable, non-AI check that runs on top of whatever the model returns.
-//
-// This is intentionally basic keyword matching, not a medical or exhaustive
-// food-science tool. It is meant to catch obvious conflicts (e.g. "paneer"
-// for a Dairy allergy) and surface them clearly — never to certify that a
-// meal or recipe is safe.
+
+/*
+ * Deterministic, keyword-based allergen safety net.
+ *
+ * The AI is instructed to respect user allergies, but AI output should
+ * never be treated as a medical-grade allergy checker.
+ *
+ * This module catches obvious conflicts and surfaces a warning.
+ * It does NOT certify that a meal is allergy-safe.
+ */
 
 const ALLERGEN_KEYWORDS = {
   Dairy: [
-    "milk", "paneer", "cheese", "curd", "yogurt", "yoghurt", "ghee",
-    "cream", "butter", "khoya", "malai", "lassi", "buttermilk",
+    "milk",
+    "paneer",
+    "cheese",
+    "curd",
+    "yogurt",
+    "yoghurt",
+    "ghee",
+    "cream",
+    "butter",
+    "khoya",
+    "mawa",
+    "malai",
+    "lassi",
+    "buttermilk",
+    "whey",
+    "casein",
   ],
+
   Gluten: [
-    "wheat", "roti", "chapati", "naan", "bread", "maida", "atta",
-    "pasta", "noodles", "gluten", "semolina", "suji", "barley", "rye",
+    "wheat",
+    "roti",
+    "chapati",
+    "naan",
+    "bread",
+    "maida",
+    "atta",
+    "pasta",
+    "noodles",
+    "gluten",
+    "semolina",
+    "suji",
+    "sooji",
+    "barley",
+    "rye",
+    "couscous",
   ],
-  Eggs: ["egg", "eggs", "omelette", "omelet", "mayonnaise", "mayo"],
+
+  Eggs: [
+    "egg",
+    "eggs",
+    "omelette",
+    "omelet",
+    "mayonnaise",
+    "mayo",
+    "meringue",
+  ],
+
   Fish: [
-    "fish", "salmon", "tuna", "prawn", "shrimp", "crab", "seafood",
-    "anchovy", "sardine", "mackerel",
+    "fish",
+    "salmon",
+    "tuna",
+    "prawn",
+    "prawns",
+    "shrimp",
+    "crab",
+    "seafood",
+    "anchovy",
+    "sardine",
+    "mackerel",
   ],
 };
 
+const SUPPORTED_ALLERGIES = Object.keys(ALLERGEN_KEYWORDS);
+
 /**
- * Scans free text (meal description, AI summary, ingredient list, recipe
- * instructions, etc.) for keywords tied to the given allergy list.
- * Returns the subset of `allergies` that appear to conflict with the text.
+ * Normalizes text before matching.
  */
-export function detectAllergenConflicts(text, allergies = []) {
-  if (!text || !Array.isArray(allergies) || allergies.length === 0) return [];
-
-  const haystack = String(text).toLowerCase();
-  const conflicts = [];
-
-  for (const allergy of allergies) {
-    const keywords = ALLERGEN_KEYWORDS[allergy];
-    if (!keywords) continue;
-    const hit = keywords.some((kw) => haystack.includes(kw));
-    if (hit) conflicts.push(allergy);
-  }
-
-  return conflicts;
+function normalizeText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
- * Convenience helper for meal analysis: checks the raw meal text plus the
- * AI's own summary, and returns feedback-shaped warning entries for any
- * allergy conflicts that were found. If the AI already mentioned the
- * conflict in its feedback, we still add our own entry — duplicated,
- * clearly-worded warnings are safer than a missed one.
+ * Checks whether a keyword exists as a complete word/phrase.
+ *
+ * Word-boundary matching avoids false positives such as:
+ * "eggplant" matching "egg".
  */
-export function buildAllergyWarnings(mealText, aiSummary, allergies = []) {
-  const combinedText = `${mealText || ""} ${aiSummary || ""}`;
-  const conflicts = detectAllergenConflicts(combinedText, allergies);
+function containsKeyword(text, keyword) {
+  const normalizedText = normalizeText(text);
+  const normalizedKeyword = normalizeText(keyword);
+
+  if (!normalizedText || !normalizedKeyword) {
+    return false;
+  }
+
+  const escapedKeyword = normalizedKeyword.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+
+  const pattern = new RegExp(
+    `(^|\\s)${escapedKeyword}(?=\\s|$)`,
+    "i"
+  );
+
+  return pattern.test(normalizedText);
+}
+
+/**
+ * Returns allergies that appear to conflict with the supplied text.
+ */
+export function detectAllergenConflicts(
+  text,
+  allergies = []
+) {
+  if (!text || !Array.isArray(allergies) || allergies.length === 0) {
+    return [];
+  }
+
+  const conflicts = [];
+
+  for (const allergy of allergies) {
+    if (!SUPPORTED_ALLERGIES.includes(allergy)) {
+      continue;
+    }
+
+    const keywords = ALLERGEN_KEYWORDS[allergy];
+
+    const hasConflict = keywords.some((keyword) =>
+      containsKeyword(text, keyword)
+    );
+
+    if (hasConflict) {
+      conflicts.push(allergy);
+    }
+  }
+
+  return [...new Set(conflicts)];
+}
+
+/**
+ * Builds feedback-shaped warnings for meal analysis.
+ *
+ * Checks both the user's original meal text and the AI summary.
+ */
+export function buildAllergyWarnings(
+  mealText,
+  aiSummary,
+  allergies = []
+) {
+  const combinedText = [
+    mealText,
+    aiSummary,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const conflicts = detectAllergenConflicts(
+    combinedText,
+    allergies
+  );
 
   return conflicts.map((allergy) => ({
-    text: `Contains or likely contains ${allergy.toLowerCase()}, which conflicts with your ${allergy} allergy/intolerance. Double-check ingredients before eating.`,
+    text:
+      `Contains or may contain ${allergy.toLowerCase()}, ` +
+      `which conflicts with your ${allergy} allergy/intolerance. ` +
+      `Double-check the ingredients before eating.`,
     type: "warning",
   }));
 }
 
 /**
- * Filters AI-generated recipes down to the ones that don't appear to
- * conflict with the user's allergies, based on their ingredient list and
- * recipe text. This is the backend safety layer for Pantry recipe
- * suggestions — it runs in addition to (not instead of) asking the AI to
- * avoid the allergens.
+ * Filters AI-generated pantry recipes using the same deterministic
+ * allergy check.
  */
-export function filterRecipesForAllergies(recipes = [], allergies = []) {
-  if (!Array.isArray(allergies) || allergies.length === 0) return recipes;
+export function filterRecipesForAllergies(
+  recipes = [],
+  allergies = []
+) {
+  if (!Array.isArray(recipes)) {
+    return [];
+  }
+
+  if (!Array.isArray(allergies) || allergies.length === 0) {
+    return recipes;
+  }
 
   return recipes.filter((recipe) => {
+    if (!recipe || typeof recipe !== "object") {
+      return false;
+    }
+
     const text = [
       recipe.name,
       recipe.recipe,
-      ...(Array.isArray(recipe.ingredients) ? recipe.ingredients : []),
+      ...(Array.isArray(recipe.ingredients)
+        ? recipe.ingredients
+        : []),
     ]
       .filter(Boolean)
       .join(" ");
 
-    const conflicts = detectAllergenConflicts(text, allergies);
+    const conflicts = detectAllergenConflicts(
+      text,
+      allergies
+    );
+
     return conflicts.length === 0;
   });
 }

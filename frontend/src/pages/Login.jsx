@@ -1,162 +1,277 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Leaf, AlertTriangle, Loader2, Info } from 'lucide-react';
-import api from '../api/api';
-import { saveAuth } from '../utils/auth';
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 
-export default function LoginPage() {
+import api from "../api/api";
+import { saveAuth, getUser } from "../utils/auth";
+
+export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const location = useLocation();
 
-  const handleLogin = async () => {
-    setError(null);
-    setNotice(null);
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get("registered") === "true") {
+      setNotice("Account created successfully. Please log in.");
+    }
+  }, [location.search]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (error) setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setError("");
+    setNotice("");
+
+    const email = form.email.trim().toLowerCase();
+    const password = form.password;
+
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data;
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+      });
 
-      // "Remember me" controls how long the session survives:
-      // checked -> persists across browser restarts (localStorage, default),
-      // unchecked -> cleared when the tab/browser closes (sessionStorage).
-      saveAuth({ token, user, persist: rememberMe });
+      const data = response?.data;
 
-      window.dispatchEvent(new Event('authChanged'));
+      if (!data?.success || !data?.token || !data?.user) {
+        throw new Error(
+          data?.message || "Login failed. Please try again."
+        );
+      }
 
-      navigate('/analyze');
+      // Store token + user using the existing auth utility.
+      saveAuth(data.token, data.user, rememberMe);
+
+      /*
+       * Questionnaire is an onboarding step.
+       * If the user has not completed it, send them there first.
+       */
+      const user = data.user || getUser();
+
+      if (user?.questionnaireCompleted === false) {
+        navigate("/questionnaire", { replace: true });
+      } else {
+        navigate("/analyze", { replace: true });
+      }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Login failed. Check your email and password.';
-      setError(errorMessage);
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Unable to log in. Please check your credentials.";
+
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    setNotice('Google login is not available yet.');
-  };
-
-  const handleFacebookLogin = () => {
-    setNotice('Facebook login is not available yet.');
-  };
-
   const handleForgotPassword = () => {
-    setNotice('Password reset isn\u2019t available yet. Please contact support to regain access to your account.');
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      handleLogin();
-    }
-  };
-
-  const handleCreateAccount = () => {
-    navigate('/register');
+    setNotice(
+      "Password reset is not available yet. Please contact the project administrator."
+    );
+    setError("");
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <main className="flex flex-col lg:flex-row w-full py-12 px-12 flex-1 bg-white pt-32">
-        {/* Left Info Section */}
-        <div className="flex-1 pr-12 hidden lg:flex flex-col justify-center">
-          <div className="bg-green-50 rounded-lg p-12 shadow flex flex-col items-center">
-            <Leaf className="w-20 h-20 text-green-500 mb-4" />
-            <h2 className="text-3xl font-bold mb-2 text-green-800">Fresh & Healthy</h2>
-            <p className="text-lg text-gray-700 text-center">Track your nutrition journey and make every day healthier!</p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* BRAND */}
+        <div className="text-center mb-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-3xl font-bold text-green-700"
+          >
+            <span className="text-4xl">🌿</span>
+            Dietly
+          </Link>
+
+          <p className="mt-2 text-gray-600">
+            Welcome back! Let's get you eating better.
+          </p>
         </div>
 
-        {/* Login Form Section */}
-        <div className="w-full max-w-md mx-auto lg:mx-0 mt-8 lg:mt-0">
-          <div className="bg-white rounded-lg shadow p-8 border border-green-100">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Leaf className="w-8 h-8 text-green-600" />
-                <h1 className="text-3xl font-bold text-green-700">Dietly</h1>
-              </div>
-              <p className="text-gray-700 text-lg">Welcome back!</p>
-              <p className="text-gray-500 text-sm">Login to continue your healthy journey</p>
-            </div>
+        {/* CARD */}
+        <div className="bg-white rounded-3xl shadow-xl border border-green-100 p-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Sign in
+            </h1>
 
-            {error && (
-              <div className="flex items-center gap-3 p-3 mb-5 bg-red-100 border border-red-300 text-red-700 rounded-lg font-medium">
-                <AlertTriangle className='w-5 h-5 flex-shrink-0' />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {notice && (
-              <div className="flex items-center gap-3 p-3 mb-5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-medium">
-                <Info className='w-5 h-5 flex-shrink-0' />
-                <span>{notice}</span>
-              </div>
-            )}
-
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">Email / Username</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input id="email" type="text" value={email} onChange={(e) => setEmail(e.target.value)} onKeyPress={handleKeyPress} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-300 rounded focus:bg-white focus:border-green-400 outline-none transition-all" placeholder="Enter your email" disabled={loading} />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={handleKeyPress} className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-300 rounded focus:bg-white focus:border-green-400 outline-none transition-all" placeholder="Enter your password" disabled={loading} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center cursor-pointer group">
-                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer" />
-                  <span className="ml-2 text-sm text-gray-700 group-hover:text-gray-900">Remember me</span>
-                </label>
-                <button onClick={handleForgotPassword} className="text-sm text-green-600 hover:text-green-700 font-semibold transition">Forgot password?</button>
-              </div>
-              <button onClick={handleLogin} disabled={loading} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded font-bold text-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {loading ? (<><Loader2 className="w-5 h-5 animate-spin" /> Logging In...</>) : ('Login')}
-              </button>
-            </div>
-
-            <div className="relative my-7">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-3 text-gray-400">or continue with</span>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button onClick={handleGoogleLogin} className="flex-1 flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all" disabled={loading}>
-                Google
-              </button>
-              <button onClick={handleFacebookLogin} className="flex-1 flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all" disabled={loading}>
-                Facebook
-              </button>
-            </div>
-
-            <p className="text-center text-sm text-gray-600 mt-6">
-              Don't have an account?{' '}
-              <button onClick={handleCreateAccount} className="text-green-600 hover:text-green-700 font-bold transition">
-                Create account
-              </button>
+            <p className="text-gray-500 mt-1">
+              Access your personalized nutrition dashboard.
             </p>
           </div>
+
+          {/* ERROR */}
+          {error && (
+            <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* NOTICE */}
+          {notice && (
+            <div className="mb-5 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+              {notice}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* EMAIL */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                Email
+              </label>
+
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="you@example.com"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* PASSWORD */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                Password
+              </label>
+
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-12 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  disabled={loading}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword((prev) => !prev)
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* OPTIONS */}
+            <div className="flex items-center justify-between gap-4 text-sm">
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) =>
+                    setRememberMe(e.target.checked)
+                  }
+                  className="w-4 h-4 accent-green-600"
+                  disabled={loading}
+                />
+
+                Remember me
+              </label>
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="font-semibold text-green-700 hover:text-green-800"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {/* SUBMIT */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-3.5 transition"
+            >
+              {loading ? (
+                "Signing in..."
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* REGISTER */}
+          <p className="text-center text-sm text-gray-600 mt-7">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-bold text-green-700 hover:text-green-800"
+            >
+              Create one
+            </Link>
+          </p>
         </div>
-      </main>
-      <footer className="w-full py-4 text-center text-sm text-gray-500 border-t mt-10">&copy; 2026 Dietly. All rights reserved.</footer>
+      </div>
     </div>
   );
 }

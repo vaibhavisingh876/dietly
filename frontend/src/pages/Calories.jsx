@@ -1,69 +1,130 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../api/api";
 
-const mealTypes = [
-  { key: "breakfast", label: "Breakfast" },
-  { key: "lunch", label: "Lunch" },
-  { key: "dinner", label: "Dinner" },
-  { key: "eveningSnack", label: "Evening Snack" },
+const MEAL_TYPES = [
+  {
+    key: "breakfast",
+    label: "Breakfast",
+  },
+  {
+    key: "lunch",
+    label: "Lunch",
+  },
+  {
+    key: "dinner",
+    label: "Dinner",
+  },
+  {
+    key: "eveningSnack",
+    label: "Evening Snack",
+  },
 ];
 
-const emptyMeals = {
-  breakfast: 0,
-  lunch: 0,
-  dinner: 0,
-  eveningSnack: 0,
-};
+function toSafeNumber(value, fallback = 0) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number < 0) {
+    return fallback;
+  }
+
+  return number;
+}
+
+function getInitialMeals() {
+  return {
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+    eveningSnack: 0,
+  };
+}
 
 export default function Calories() {
-  const [foodInput, setFoodInput] = useState("");
-  const [manualInput, setManualInput] = useState("");
-  const [waterInput, setWaterInput] = useState("");
+  const [data, setData] = useState(null);
 
-  const [dailyGoal, setDailyGoal] = useState(2000);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [meals, setMeals] = useState(emptyMeals);
-  const [totalCalories, setTotalCalories] = useState(0);
-  const [waterIntake, setWaterIntake] = useState(0);
+  const [error, setError] =
+    useState("");
 
-  const [selectedMeal, setSelectedMeal] = useState("breakfast");
+  const [success, setSuccess] =
+    useState("");
 
-  const [loading, setLoading] = useState(true);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [manualLoading, setManualLoading] = useState(false);
-  const [waterLoading, setWaterLoading] = useState(false);
+  const [mealText, setMealText] =
+    useState("");
 
-  const [error, setError] = useState("");
+  const [aiLoading, setAiLoading] =
+    useState(false);
 
-  // -----------------------------------------
-  // LOAD TODAY'S CALORIE DATA
-  // -----------------------------------------
+  const [manualCalories, setManualCalories] =
+    useState(getInitialMeals());
+
+  const [manualLoading, setManualLoading] =
+    useState({});
+
+  const [water, setWater] =
+    useState("");
+
+  const [waterLoading, setWaterLoading] =
+    useState(false);
+
+  /* ===================================================
+     LOAD TODAY
+  =================================================== */
+
   const loadToday = async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      setLoading(true);
-      setError("");
+      const response =
+        await api.get("/calorie/today");
 
-      const response = await api.get("/calorie/today");
+      const today =
+        response.data?.data;
 
-      const entry = response.data?.entry;
-
-      if (entry) {
-        setDailyGoal(entry.dailyGoal ?? 2000);
-
-        setMeals({
-          breakfast: entry.meals?.breakfast ?? 0,
-          lunch: entry.meals?.lunch ?? 0,
-          dinner: entry.meals?.dinner ?? 0,
-          eveningSnack: entry.meals?.eveningSnack ?? 0,
-        });
-
-        setTotalCalories(entry.totalCalories ?? 0);
-        setWaterIntake(entry.waterIntake ?? 0);
+      if (!today) {
+        throw new Error(
+          "Invalid calorie data received."
+        );
       }
+
+      setData(today);
+
+      setManualCalories({
+        breakfast:
+          toSafeNumber(
+            today.meals?.breakfast
+          ),
+
+        lunch:
+          toSafeNumber(
+            today.meals?.lunch
+          ),
+
+        dinner:
+          toSafeNumber(
+            today.meals?.dinner
+          ),
+
+        eveningSnack:
+          toSafeNumber(
+            today.meals?.eveningSnack
+          ),
+      });
+
+      setWater(
+        String(
+          toSafeNumber(
+            today.waterIntake
+          )
+        )
+      );
     } catch (err) {
       console.error(
-        "Error loading today's calories:",
-        err.response?.data || err.message
+        "Failed to load calorie data:",
+        err
       );
 
       setError(
@@ -79,424 +140,579 @@ export default function Calories() {
     loadToday();
   }, []);
 
-  // -----------------------------------------
-  // AI MEAL ADD
-  // -----------------------------------------
-  const addAICalories = async () => {
-    if (!foodInput.trim()) return;
+  /* ===================================================
+     AI MEAL
+  =================================================== */
+
+  const addMealWithAI = async () => {
+    const cleanedText =
+      mealText.trim();
+
+    if (!cleanedText) {
+      setError(
+        "Please describe your meal first."
+      );
+      return;
+    }
+
+    if (cleanedText.length > 1000) {
+      setError(
+        "Meal description must be 1000 characters or less."
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      setAiLoading(true);
-      setError("");
+      const response =
+        await api.post(
+          "/calorie/add-meal-text",
+          {
+            mealText: cleanedText,
+          }
+        );
 
-      const response = await api.post("/calorie/add-meal-text", {
-        mealType: selectedMeal,
-        mealText: foodInput.trim(),
-      });
+      const updated =
+        response.data?.data;
 
-      const entry = response.data?.entry;
-
-      if (entry) {
-        setMeals({
-          breakfast: entry.meals?.breakfast ?? 0,
-          lunch: entry.meals?.lunch ?? 0,
-          dinner: entry.meals?.dinner ?? 0,
-          eveningSnack: entry.meals?.eveningSnack ?? 0,
-        });
-
-        setTotalCalories(entry.totalCalories ?? 0);
-        setWaterIntake(entry.waterIntake ?? 0);
+      if (!updated) {
+        throw new Error(
+          "Invalid response from server."
+        );
       }
 
-      setFoodInput("");
+      setData(updated);
+
+      setManualCalories({
+        breakfast:
+          toSafeNumber(
+            updated.meals?.breakfast
+          ),
+
+        lunch:
+          toSafeNumber(
+            updated.meals?.lunch
+          ),
+
+        dinner:
+          toSafeNumber(
+            updated.meals?.dinner
+          ),
+
+        eveningSnack:
+          toSafeNumber(
+            updated.meals?.eveningSnack
+          ),
+      });
+
+      setWater(
+        String(
+          toSafeNumber(
+            updated.waterIntake
+          )
+        )
+      );
+
+      setMealText("");
+
+      setSuccess(
+        "Meal analyzed and added successfully."
+      );
     } catch (err) {
       console.error(
         "AI calorie error:",
-        err.response?.data || err.message
+        err
       );
 
       setError(
         err.response?.data?.error ||
-          "Failed to analyze the meal. Please try again."
+          "Unable to analyze this meal."
       );
     } finally {
       setAiLoading(false);
     }
   };
 
-  // -----------------------------------------
-  // MANUAL CALORIE SET
-  // -----------------------------------------
-  const addManualCalories = async () => {
-    if (!manualInput.trim()) return;
+  /* ===================================================
+     MANUAL CALORIES
+  =================================================== */
 
-    const value = parseInt(manualInput);
+  const updateManualCalories = async (
+    mealType
+  ) => {
+    const raw =
+      manualCalories[mealType];
 
-    if (isNaN(value) || value < 0) {
-      setError("Please enter a valid non-negative calorie value.");
+    if (
+      raw === "" ||
+      raw === null ||
+      raw === undefined
+    ) {
+      setError(
+        "Please enter a calorie value."
+      );
       return;
     }
 
+    const calories =
+      Number(raw);
+
+    if (
+      !Number.isFinite(calories) ||
+      calories < 0 ||
+      calories > 10000
+    ) {
+      setError(
+        "Calories must be between 0 and 10,000."
+      );
+      return;
+    }
+
+    setManualLoading((prev) => ({
+      ...prev,
+      [mealType]: true,
+    }));
+
+    setError("");
+    setSuccess("");
+
     try {
-      setManualLoading(true);
-      setError("");
+      const response =
+        await api.post(
+          "/calorie/set-meal-calories",
+          {
+            mealType,
+            calories,
+          }
+        );
 
-      const response = await api.post("/calorie/set-meal-calories", {
-        mealType: selectedMeal,
-        calories: value,
-      });
+      const updated =
+        response.data?.data;
 
-      const entry = response.data?.entry;
-
-      if (entry) {
-        setMeals({
-          breakfast: entry.meals?.breakfast ?? 0,
-          lunch: entry.meals?.lunch ?? 0,
-          dinner: entry.meals?.dinner ?? 0,
-          eveningSnack: entry.meals?.eveningSnack ?? 0,
-        });
-
-        setTotalCalories(entry.totalCalories ?? 0);
-        setWaterIntake(entry.waterIntake ?? 0);
+      if (!updated) {
+        throw new Error(
+          "Invalid response from server."
+        );
       }
 
-      setManualInput("");
+      setData(updated);
+
+      setManualCalories({
+        breakfast:
+          toSafeNumber(
+            updated.meals?.breakfast
+          ),
+
+        lunch:
+          toSafeNumber(
+            updated.meals?.lunch
+          ),
+
+        dinner:
+          toSafeNumber(
+            updated.meals?.dinner
+          ),
+
+        eveningSnack:
+          toSafeNumber(
+            updated.meals?.eveningSnack
+          ),
+      });
+
+      setSuccess(
+        "Calories updated successfully."
+      );
     } catch (err) {
       console.error(
-        "Manual calorie error:",
-        err.response?.data || err.message
+        "Manual calorie update error:",
+        err
       );
 
       setError(
         err.response?.data?.error ||
-          "Failed to update calories."
+          "Unable to update calories."
       );
     } finally {
-      setManualLoading(false);
+      setManualLoading((prev) => ({
+        ...prev,
+        [mealType]: false,
+      }));
     }
   };
 
-  // -----------------------------------------
-  // ADD WATER
-  // -----------------------------------------
-  const addWater = async () => {
-    if (!waterInput.trim()) return;
+  /* ===================================================
+     WATER
+  =================================================== */
 
-    const amount = parseInt(waterInput);
-
-    if (isNaN(amount) || amount < 0) {
-      setError("Please enter a valid water amount.");
+  const updateWater = async () => {
+    if (
+      water === "" ||
+      water === null
+    ) {
+      setError(
+        "Please enter your water intake."
+      );
       return;
     }
 
+    const amount =
+      Number(water);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount < 0 ||
+      amount > 20000
+    ) {
+      setError(
+        "Water intake must be between 0 and 20,000 ml."
+      );
+      return;
+    }
+
+    setWaterLoading(true);
+    setError("");
+    setSuccess("");
+
     try {
-      setWaterLoading(true);
-      setError("");
+      const response =
+        await api.post(
+          "/calorie/set-water",
+          {
+            amount,
+          }
+        );
 
-      const response = await api.post("/calorie/set-water", {
-        amount,
-      });
+      const updated =
+        response.data?.data;
 
-      const entry = response.data?.entry;
-
-      if (entry) {
-        setWaterIntake(entry.waterIntake ?? 0);
-
-        setMeals({
-          breakfast: entry.meals?.breakfast ?? 0,
-          lunch: entry.meals?.lunch ?? 0,
-          dinner: entry.meals?.dinner ?? 0,
-          eveningSnack: entry.meals?.eveningSnack ?? 0,
-        });
-
-        setTotalCalories(entry.totalCalories ?? 0);
+      if (!updated) {
+        throw new Error(
+          "Invalid response from server."
+        );
       }
 
-      setWaterInput("");
+      setData(updated);
+
+      setWater(
+        String(
+          toSafeNumber(
+            updated.waterIntake
+          )
+        )
+      );
+
+      setSuccess(
+        "Water intake updated successfully."
+      );
     } catch (err) {
       console.error(
         "Water update error:",
-        err.response?.data || err.message
+        err
       );
 
       setError(
         err.response?.data?.error ||
-          "Failed to update water intake."
+          "Unable to update water intake."
       );
     } finally {
       setWaterLoading(false);
     }
   };
 
-  // -----------------------------------------
-  // CALCULATIONS FOR DISPLAY ONLY
-  // -----------------------------------------
-  const remaining =
-    dailyGoal > totalCalories
-      ? dailyGoal - totalCalories
-      : 0;
+  /* ===================================================
+     LOADING
+  =================================================== */
 
-  const exceeded = totalCalories > dailyGoal;
-
-  // -----------------------------------------
-  // LOADING STATE
-  // -----------------------------------------
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-green-50">
-        <p className="text-lg font-semibold text-green-700">
-          Loading today's calories...
-        </p>
+      <div className="min-h-screen bg-green-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
+
+          <p className="text-gray-600 font-medium">
+            Loading today's nutrition...
+          </p>
+        </div>
       </div>
     );
   }
 
+  const goal =
+    toSafeNumber(
+      data?.dailyGoal,
+      2000
+    );
+
+  const total =
+    toSafeNumber(
+      data?.totalCalories
+    );
+
+  const remaining =
+    Math.max(
+      0,
+      goal - total
+    );
+
+  const progress =
+    goal > 0
+      ? Math.min(
+          100,
+          (total / goal) * 100
+        )
+      : 0;
+
   return (
-    <div className="min-h-screen bg-green-50 p-6">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900">
+            Today's Calories
+          </h1>
 
-        {/* HEADER */}
-        <h1 className="text-3xl font-bold text-green-700 mb-6 text-center">
-          Calorie Tracker
-        </h1>
+          <p className="mt-2 text-gray-600">
+            Track your meals, calories and hydration.
+          </p>
+        </div>
 
-        {/* ERROR MESSAGE */}
+        {/* Messages */}
         {error && (
-          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-lg mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
             {error}
           </div>
         )}
 
-        {/* DAILY GOAL */}
-        <div className="bg-white p-4 rounded-xl shadow w-full mb-4">
-          <label className="font-semibold">
-            Daily Calorie Goal:
-          </label>
-
-          <div className="mt-2 p-2 bg-gray-100 rounded">
-            {dailyGoal} kcal
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4">
+            {success}
           </div>
-        </div>
+        )}
 
-        {/* FOOD INPUT + AI */}
-        <div className="bg-white p-4 rounded-xl shadow w-full mb-4">
-          <label className="font-semibold">
-            Enter Food / Meal:
-          </label>
+        {/* Summary */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-sm text-gray-500">
+                Consumed
+              </p>
 
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              className="flex-1 p-2 border rounded"
-              value={foodInput}
-              onChange={(e) => setFoodInput(e.target.value)}
-              placeholder="e.g., Paneer tikka with 2 rotis"
-              disabled={aiLoading}
-            />
+              <p className="text-3xl font-bold text-gray-900">
+                {Math.round(total)} kcal
+              </p>
+            </div>
 
-            <button
-              type="button"
-              onClick={addAICalories}
-              disabled={aiLoading || !foodInput.trim()}
-              className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
-            >
-              {aiLoading ? "Analyzing..." : "AI Add"}
-            </button>
-          </div>
+            <div>
+              <p className="text-sm text-gray-500">
+                Daily Goal
+              </p>
 
-          {/* MEAL SELECTION */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {mealTypes.map((meal) => (
-              <button
-                type="button"
-                key={meal.key}
-                onClick={() => setSelectedMeal(meal.key)}
-                className={`px-3 py-2 rounded ${
-                  selectedMeal === meal.key
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                {meal.label}
-              </button>
-            ))}
+              <p className="text-3xl font-bold text-green-700">
+                {Math.round(goal)} kcal
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">
+                Remaining
+              </p>
+
+              <p className="text-3xl font-bold text-emerald-700">
+                {Math.round(remaining)} kcal
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-gray-500 mt-3">
-            Adding AI food to:{" "}
-            <span className="font-semibold">
-              {
-                mealTypes.find(
-                  (meal) => meal.key === selectedMeal
-                )?.label
-              }
-            </span>
-          </p>
-        </div>
-
-        {/* MANUAL CALORIES */}
-        <div className="bg-white p-4 rounded-xl shadow w-full mb-4">
-          <label className="font-semibold">
-            Set Meal Calories Manually:
-          </label>
-
-          <div className="flex gap-2 mt-2">
-            <input
-              type="number"
-              min="0"
-              className="flex-1 p-2 border rounded"
-              value={manualInput}
-              onChange={(e) =>
-                setManualInput(e.target.value)
-              }
-              placeholder="e.g., 350"
-              disabled={manualLoading}
-            />
-
-            <button
-              type="button"
-              onClick={addManualCalories}
-              disabled={manualLoading || !manualInput.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-            >
-              {manualLoading ? "Saving..." : "Set"}
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-500 mt-2">
-            This replaces the current calories for the selected
-            meal.
-          </p>
-        </div>
-
-        {/* MEAL CALORIE DISPLAY */}
-        {mealTypes.map((meal) => (
-          <div
-            key={meal.key}
-            className="bg-white p-4 rounded-xl shadow w-full mb-3 flex justify-between items-center"
-          >
-            <span className="font-semibold">
-              {meal.label}: {meals[meal.key]} kcal
-            </span>
-
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  setError("");
-
-                  const response = await api.post(
-                    "/calorie/set-meal-calories",
-                    {
-                      mealType: meal.key,
-                      calories: 0,
-                    }
-                  );
-
-                  const entry = response.data?.entry;
-
-                  if (entry) {
-                    setMeals({
-                      breakfast:
-                        entry.meals?.breakfast ?? 0,
-                      lunch:
-                        entry.meals?.lunch ?? 0,
-                      dinner:
-                        entry.meals?.dinner ?? 0,
-                      eveningSnack:
-                        entry.meals?.eveningSnack ?? 0,
-                    });
-
-                    setTotalCalories(
-                      entry.totalCalories ?? 0
-                    );
-                  }
-                } catch (err) {
-                  console.error(
-                    "Reset calorie error:",
-                    err.response?.data || err.message
-                  );
-
-                  setError(
-                    err.response?.data?.error ||
-                      "Failed to reset calories."
-                  );
-                }
-              }}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Reset
-            </button>
-          </div>
-        ))}
-
-        {/* TOTAL SUMMARY */}
-        <div className="bg-white p-5 rounded-xl shadow w-full mt-4 text-center">
-          <p className="text-lg font-bold">
-            Total Intake:{" "}
-            <span
-              className={
-                exceeded
-                  ? "text-red-600"
-                  : "text-green-700"
-              }
-            >
-              {totalCalories} kcal
-            </span>
-          </p>
-
-          <p className="mt-2 font-semibold">
-            {exceeded ? (
-              <span className="text-red-600">
-                ⚠ Goal Exceeded!
+          <div className="mt-6">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500">
+                Daily progress
               </span>
-            ) : (
-              `Remaining: ${remaining} kcal`
-            )}
-          </p>
+
+              <span className="font-semibold text-gray-700">
+                {Math.round(progress)}%
+              </span>
+            </div>
+
+            <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-600 rounded-full transition-all"
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* WATER TRACKING */}
-        <div className="bg-white p-4 rounded-xl shadow w-full mt-4">
-          <h2 className="font-bold text-lg mb-2">
-            💧 Water Intake
+        {/* AI Meal Entry */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Add Meal with AI
           </h2>
 
-          <p className="text-gray-600 mb-3">
-            Current intake:{" "}
-            <span className="font-semibold">
-              {waterIntake}
-            </span>
+          <p className="text-gray-600 mt-2">
+            Describe what you ate and AI will estimate
+            the calories and nutrition.
           </p>
 
-          <div className="flex gap-2">
+          <textarea
+            value={mealText}
+            onChange={(e) =>
+              setMealText(e.target.value)
+            }
+            maxLength={1000}
+            rows={4}
+            placeholder="Example: 2 rotis, paneer curry and a bowl of curd"
+            className="w-full mt-5 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            disabled={aiLoading}
+          />
+
+          <div className="flex justify-between items-center mt-2 text-sm text-gray-500">
+            <span>
+              AI values are estimates.
+            </span>
+
+            <span>
+              {mealText.length}/1000
+            </span>
+          </div>
+
+          <button
+            onClick={addMealWithAI}
+            disabled={aiLoading}
+            className="mt-5 w-full sm:w-auto px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold rounded-xl transition"
+          >
+            {aiLoading
+              ? "Analyzing..."
+              : "Analyze & Add Meal"}
+          </button>
+        </div>
+
+        {/* Manual Meals */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Manual Calorie Entry
+          </h2>
+
+          <p className="text-gray-600 mt-2">
+            Set the calorie value for a meal manually.
+          </p>
+
+          <div className="mt-6 space-y-4">
+            {MEAL_TYPES.map(
+              ({ key, label }) => (
+                <div
+                  key={key}
+                  className="flex flex-col sm:flex-row gap-3 sm:items-center"
+                >
+                  <label className="sm:w-40 font-semibold text-gray-700">
+                    {label}
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    max="10000"
+                    step="1"
+                    value={
+                      manualCalories[key]
+                    }
+                    onChange={(e) =>
+                      setManualCalories(
+                        (prev) => ({
+                          ...prev,
+                          [key]:
+                            e.target.value,
+                        })
+                      )
+                    }
+                    className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={
+                      manualLoading[key]
+                    }
+                  />
+
+                  <button
+                    onClick={() =>
+                      updateManualCalories(
+                        key
+                      )
+                    }
+                    disabled={
+                      manualLoading[key]
+                    }
+                    className="px-5 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold rounded-xl"
+                  >
+                    {manualLoading[key]
+                      ? "Saving..."
+                      : "Save"}
+                  </button>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Water */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Water Intake
+          </h2>
+
+          <p className="text-gray-600 mt-2">
+            Track your total water intake for today.
+          </p>
+
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <input
               type="number"
               min="0"
-              className="flex-1 p-2 border rounded"
-              value={waterInput}
+              max="20000"
+              step="50"
+              value={water}
               onChange={(e) =>
-                setWaterInput(e.target.value)
+                setWater(e.target.value)
               }
-              placeholder="Amount"
+              placeholder="Water in ml"
+              className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={waterLoading}
             />
 
             <button
-              type="button"
-              onClick={addWater}
-              disabled={waterLoading || !waterInput.trim()}
-              className="px-4 py-2 bg-cyan-600 text-white rounded disabled:opacity-50"
+              onClick={updateWater}
+              disabled={waterLoading}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold rounded-xl"
             >
-              {waterLoading ? "Saving..." : "Update"}
+              {waterLoading
+                ? "Saving..."
+                : "Save Water"}
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 mt-2">
-            Enter the total water intake you want to record.
+          <p className="mt-3 text-sm text-gray-500">
+            Today's total:{" "}
+            <span className="font-semibold">
+              {Math.round(
+                toSafeNumber(
+                  data?.waterIntake
+                )
+              )}{" "}
+              ml
+            </span>
           </p>
         </div>
 
+        {/* Disclaimer */}
+        <p className="text-sm text-gray-500 text-center pb-8">
+          Nutrition and calorie values generated by AI
+          are estimates for informational purposes only.
+          They should not replace professional dietary or
+          medical advice.
+        </p>
       </div>
     </div>
   );

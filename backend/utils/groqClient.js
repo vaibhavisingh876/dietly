@@ -3,303 +3,579 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
-console.log("✅ Groq API initialized");
-
 if (!process.env.GROQ_API_KEY) {
-    throw new Error("❌ GROQ_API_KEY missing in .env");
+  throw new Error("GROQ_API_KEY missing in environment variables");
 }
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "openai/gpt-oss-20b";
+const GROQ_API_URL =
+  "https://api.groq.com/openai/v1/chat/completions";
 
-// ======= Queue + Cache =======
+const GROQ_MODEL =
+  process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+
+const REQUEST_TIMEOUT_MS = 30_000;
+const RETRY_LIMIT = 2;
+const QUEUE_DELAY_MS = 500;
+const RETRY_DELAY_MS = 2_000;
+
+const MAX_CACHE_SIZE = 100;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
 const requestQueue = [];
 let isProcessingQueue = false;
+
 const cache = new Map();
 
-const PROMPT_RETRY_LIMIT = 2;
+/* =====================================================
+   CACHE
+===================================================== */
 
-const processQueue = async () => {
-    if (isProcessingQueue || requestQueue.length === 0) return;
+function getCached(prompt) {
+  const cached = cache.get(prompt);
 
-    isProcessingQueue = true;
+  if (!cached) {
+    return null;
+  }
 
-    while (requestQueue.length > 0) {
-        const { prompt, resolve, reject, retryCount } = requestQueue.shift();
+  if (Date.now() - cached.createdAt > CACHE_TTL_MS) {
+    cache.delete(prompt);
+    return null;
+  }
 
-        // ===== CACHE =====
-        if (cache.has(prompt)) {
-            console.log(
-                "🟢 CACHE HIT (Groq Client): Serving request from internal cache."
-            );
+  return cached.value;
+}
 
-            resolve(cache.get(prompt));
+function setCached(prompt, value) {
+  // Remove oldest entry when cache is full.
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = cache.keys().next().value;
 
-            await new Promise((r) => setTimeout(r, 100));
-            continue;
-        }
+    if (oldestKey) {
+      cache.delete(oldestKey);
+    }
+  }
 
-        console.log(
-            "🔴 CACHE MISS (Groq Client): Calling external Groq API..."
-        );
+  cache.set(prompt, {
+    value,
+    createdAt: Date.now(),
+  });
+}
 
-        try {
-            const response = await fetch(GROQ_API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-                },
-                body: JSON.stringify({
-                    model: GROQ_MODEL,
+/* =====================================================
+   HELPERS
+===================================================== */
 
-                    messages: [
-                        {
-                            role: "user",
-                            content: prompt,
-                        },
-                    ],
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-                    // Force JSON response
-                    response_format: {
-                        type: "json_object",
-                    },
+function isRetryableStatus(status) {
+  return (
+    status === 408 ||
+    status === 429 ||
+    status >= 500
+  );
+}
 
-                    temperature: 0.2,
-                }),
-            });
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
 
-            const data = await response.json();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
 
-            // ===== API ERROR =====
-            if (!response.ok) {
-                console.error("❌ Groq API Error:", data);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
-                if (retryCount < PROMPT_RETRY_LIMIT) {
-                    console.log(
-                        `🔄 Retrying Groq request... (${retryCount + 1}/${PROMPT_RETRY_LIMIT})`
-                    );
+function cleanText(value, maxLength = 500) {
+  return String(value || "")
+    .trim()
+    .slice(0, maxLength);
+}
 
-                    requestQueue.push({
-                        prompt,
-                        resolve,
-                        reject,
-                        retryCount: retryCount + 1,
-                    });
-                } else {
-                    reject(
-                        new Error(
-                            data.error?.message ||
-                                "Failed to fetch from Groq API"
-                        )
-                    );
-                }
+function toNonNegativeNumber(value) {
+  const number =
+    typeof value === "number"
+      ? value
+      : Number(value);
 
-                await new Promise((r) => setTimeout(r, 5000));
-                continue;
-            }
+  return Number.isFinite(number) && number >= 0
+    ? number
+    : null;
+}
 
-            // ===== EXTRACT RESPONSE =====
-            const rawText =
-                data?.choices?.[0]?.message?.content || "{}";
+/* =====================================================
+   GROQ REQUEST QUEUE
+===================================================== */
 
-            let jsonResult = {};
+async function processQueue() {
+  if (isProcessingQueue || requestQueue.length === 0) {
+    return;
+  }
 
-            try {
-                jsonResult = JSON.parse(rawText);
-            } catch (e) {
-                console.error(
-                    "❌ Invalid JSON from Groq:",
-                    e.message
-                );
+  isProcessingQueue = true;
 
-                // Retry if Groq returned invalid JSON
-                if (retryCount < PROMPT_RETRY_LIMIT) {
-                    console.log(
-                        `🔄 Retrying because response was not valid JSON...`
-                    );
+  while (requestQueue.length > 0) {
+    const {
+      prompt,
+      resolve,
+      reject,
+      retryCount,
+    } = requestQueue.shift();
 
-                    requestQueue.push({
-                        prompt,
-                        resolve,
-                        reject,
-                        retryCount: retryCount + 1,
-                    });
+    const cached = getCached(prompt);
 
-                    await new Promise((r) => setTimeout(r, 3000));
-                    continue;
-                }
-
-                reject(e);
-                continue;
-            }
-
-            // ===== CACHE RESULT =====
-            cache.set(prompt, jsonResult);
-
-            resolve(jsonResult);
-
-            // Small delay between requests
-            await new Promise((r) => setTimeout(r, 1000));
-        } catch (err) {
-            console.error("❌ Groq API Error:", err);
-
-            if (retryCount < PROMPT_RETRY_LIMIT) {
-                requestQueue.push({
-                    prompt,
-                    resolve,
-                    reject,
-                    retryCount: retryCount + 1,
-                });
-
-                await new Promise((r) => setTimeout(r, 3000));
-            } else {
-                reject(err);
-            }
-        }
+    if (cached) {
+      resolve(cached);
+      continue;
     }
 
-    isProcessingQueue = false;
-};
+    try {
+      const response = await fetchWithTimeout(
+        GROQ_API_URL,
+        {
+          method: "POST",
 
-// ======= Queue Request =======
-const enqueueRequest = (prompt) => {
-    return new Promise((resolve, reject) => {
-        requestQueue.push({
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          },
+
+          body: JSON.stringify({
+            model: GROQ_MODEL,
+
+            messages: [
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+
+            response_format: {
+              type: "json_object",
+            },
+
+            temperature: 0.2,
+          }),
+        }
+      );
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      /* ---------------------------------------------
+         API ERROR
+      --------------------------------------------- */
+
+      if (!response.ok) {
+        const message =
+          data?.error?.message ||
+          `Groq API request failed with status ${response.status}`;
+
+        const shouldRetry =
+          isRetryableStatus(response.status) &&
+          retryCount < RETRY_LIMIT;
+
+        if (shouldRetry) {
+          requestQueue.push({
             prompt,
             resolve,
             reject,
-            retryCount: 0,
+            retryCount: retryCount + 1,
+          });
+
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+
+        reject(new Error(message));
+        continue;
+      }
+
+      /* ---------------------------------------------
+         EXTRACT JSON
+      --------------------------------------------- */
+
+      const rawText =
+        data?.choices?.[0]?.message?.content;
+
+      if (
+        typeof rawText !== "string" ||
+        !rawText.trim()
+      ) {
+        const error =
+          new Error("Groq returned an empty response.");
+
+        if (retryCount < RETRY_LIMIT) {
+          requestQueue.push({
+            prompt,
+            resolve,
+            reject,
+            retryCount: retryCount + 1,
+          });
+
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+
+        reject(error);
+        continue;
+      }
+
+      let jsonResult;
+
+      try {
+        jsonResult = JSON.parse(rawText);
+      } catch {
+        const error =
+          new Error("Groq returned invalid JSON.");
+
+        if (retryCount < RETRY_LIMIT) {
+          requestQueue.push({
+            prompt,
+            resolve,
+            reject,
+            retryCount: retryCount + 1,
+          });
+
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+
+        reject(error);
+        continue;
+      }
+
+      setCached(prompt, jsonResult);
+
+      resolve(jsonResult);
+
+      await sleep(QUEUE_DELAY_MS);
+    } catch (error) {
+      const isTimeout =
+        error?.name === "AbortError";
+
+      const shouldRetry =
+        retryCount < RETRY_LIMIT;
+
+      if (shouldRetry) {
+        requestQueue.push({
+          prompt,
+          resolve,
+          reject,
+          retryCount: retryCount + 1,
         });
 
-        processQueue();
-    });
-};
+        await sleep(RETRY_DELAY_MS);
+        continue;
+      }
 
-// =====================================================
-// PROFILE CONTEXT (shared by meal analysis + recipes)
-// =====================================================
-
-/**
- * Turns a UserProfile document (or plain object) into a short, plain-text
- * context block the AI can use as *contextual guidance* — never as a basis
- * for medical claims. Fields that aren't set are simply omitted.
- */
-function buildProfileContext(profile) {
-    if (!profile) return "";
-
-    const lines = [];
-    if (profile.age) lines.push(`Age: ${profile.age}`);
-    if (profile.gender) lines.push(`Gender: ${profile.gender}`);
-    if (profile.height) lines.push(`Height: ${profile.height} cm`);
-    if (profile.weight) lines.push(`Weight: ${profile.weight} kg`);
-    if (profile.dietaryPreferences) lines.push(`Dietary preference: ${profile.dietaryPreferences}`);
-    if (Array.isArray(profile.allergies) && profile.allergies.length) {
-        lines.push(`Allergies/intolerances (must be flagged if present in the meal/recipe): ${profile.allergies.join(", ")}`);
+      reject(
+        isTimeout
+          ? new Error(
+              "Groq request timed out. Please try again."
+            )
+          : error
+      );
     }
-    if (Array.isArray(profile.healthGoals) && profile.healthGoals.length) {
-        lines.push(`Health goals: ${profile.healthGoals.join(", ")}`);
-    }
-    if (profile.lifestyle) lines.push(`Lifestyle / activity level: ${profile.lifestyle}`);
+  }
 
-    const goal = profile.calorieGoalOverride || profile.calorieGoal;
-    if (goal) lines.push(`Estimated daily calorie goal: ~${goal} kcal`);
-
-    if (lines.length === 0) return "";
-
-    return `User profile (use only as contextual guidance, never as medical advice):\n${lines.join("\n")}\n\n`;
+  isProcessingQueue = false;
 }
 
-// =====================================================
-// ANALYZE MEAL
-// =====================================================
+function enqueueRequest(prompt) {
+  return new Promise((resolve, reject) => {
+    requestQueue.push({
+      prompt,
+      resolve,
+      reject,
+      retryCount: 0,
+    });
 
-/**
- * Analyzes a meal, optionally personalized to a UserProfile.
- * `profile` is optional — when omitted, the analysis is generic.
- */
-export const analyzeMeal = async (mealText, profile = null) => {
-    const profileContext = buildProfileContext(profile);
+    processQueue().catch((error) => {
+      console.error("Groq queue error:", error);
 
-    const prompt = `
-${profileContext}Analyze this meal: "${mealText}".
+      isProcessingQueue = false;
+    });
+  });
+}
 
-If a user profile is provided above, use it as contextual guidance only:
-- If the meal conflicts with the user's dietary preference or listed allergies, clearly say so in feedback with type "warning".
-- If the meal seems notably high or low in calories relative to the user's health goals, mention it with type "warning" or "positive" as appropriate.
-- Never provide medical advice or diagnoses — only general nutritional observations.
+/* =====================================================
+   PROFILE CONTEXT
+===================================================== */
 
-Return ONLY a JSON object exactly in this format (all nutrition fields must be plain numbers, not strings):
+function buildProfileContext(profile) {
+  if (!profile) {
+    return "";
+  }
+
+  const lines = [];
+
+  if (profile.age) {
+    lines.push(`Age: ${profile.age}`);
+  }
+
+  if (profile.gender) {
+    lines.push(`Gender: ${profile.gender}`);
+  }
+
+  if (profile.height) {
+    lines.push(`Height: ${profile.height} cm`);
+  }
+
+  if (profile.weight) {
+    lines.push(`Weight: ${profile.weight} kg`);
+  }
+
+  if (profile.dietaryPreferences) {
+    lines.push(
+      `Dietary preference: ${profile.dietaryPreferences}`
+    );
+  }
+
+  if (
+    Array.isArray(profile.allergies) &&
+    profile.allergies.length > 0
+  ) {
+    lines.push(
+      `Allergies/intolerances: ${profile.allergies.join(
+        ", "
+      )}`
+    );
+  }
+
+  if (
+    Array.isArray(profile.healthGoals) &&
+    profile.healthGoals.length > 0
+  ) {
+    lines.push(
+      `Health goals: ${profile.healthGoals.join(", ")}`
+    );
+  }
+
+  if (profile.lifestyle) {
+    lines.push(
+      `Lifestyle/activity level: ${profile.lifestyle}`
+    );
+  }
+
+  const goal =
+    profile.calorieGoalOverride ||
+    profile.calorieGoal;
+
+  if (goal) {
+    lines.push(
+      `Estimated daily calorie goal: ~${goal} kcal`
+    );
+  }
+
+  if (lines.length === 0) {
+    return "";
+  }
+
+  return (
+    "User profile (contextual guidance only; never medical advice):\n" +
+    `${lines.join("\n")}\n\n`
+  );
+}
+
+/* =====================================================
+   ANALYZE MEAL
+===================================================== */
+
+export const analyzeMeal = async (
+  mealText,
+  profile = null
+) => {
+  const safeMealText = cleanText(mealText, 1000);
+
+  if (!safeMealText) {
+    throw new Error("Meal description is required.");
+  }
+
+  const profileContext =
+    buildProfileContext(profile);
+
+  const prompt = `
+${profileContext}
+
+Analyze this meal:
+
+"${safeMealText}"
+
+Use the user profile only as contextual nutritional guidance.
+
+Rules:
+- Identify obvious conflicts with listed dietary preferences or allergies.
+- Mention relevant nutritional observations.
+- Never provide medical diagnoses.
+- Never claim that a meal is medically safe.
+- Nutrition values must be estimates.
+- Return ONLY valid JSON.
+
+Return exactly:
 
 {
-  "summary": "Short 1-2 sentence summary of the meal",
+  "summary": "Short 1-2 sentence summary",
   "calories": 420,
   "protein": 32,
   "carbs": 48,
   "fat": 15,
   "fiber": 8,
   "feedback": [
-    { "text": "Great protein source", "type": "positive" },
-    { "text": "Contains dairy, which conflicts with your dairy allergy", "type": "warning" }
+    {
+      "text": "Great protein source",
+      "type": "positive"
+    }
   ]
 }
 `;
 
-    const result = await enqueueRequest(prompt);
+  const result = await enqueueRequest(prompt);
 
-    // ===== VALIDATION =====
-    const numericFields = ["calories", "protein", "carbs", "fat", "fiber"];
-    const coerced = { ...result };
-    for (const field of numericFields) {
-        const value = typeof coerced[field] === "string" ? Number(coerced[field]) : coerced[field];
-        coerced[field] = value;
-    }
+  const numericFields = [
+    "calories",
+    "protein",
+    "carbs",
+    "fat",
+    "fiber",
+  ];
 
-    const isValid =
-        coerced &&
-        typeof coerced.summary === "string" &&
-        coerced.summary.trim().length > 0 &&
-        numericFields.every((f) => typeof coerced[f] === "number" && !Number.isNaN(coerced[f]) && coerced[f] >= 0) &&
-        Array.isArray(coerced.feedback) &&
-        coerced.feedback.every((f) => f && typeof f.text === "string" && typeof f.type === "string");
+  const coerced = {
+    ...result,
+  };
 
-    if (!isValid) {
-        console.error("Invalid Groq response for analyzeMeal:", result);
-        throw new Error("Invalid Groq response for analyzeMeal");
-    }
+  for (const field of numericFields) {
+    coerced[field] =
+      toNonNegativeNumber(coerced[field]);
+  }
 
-    return coerced;
+  const feedback = Array.isArray(
+    coerced.feedback
+  )
+    ? coerced.feedback
+        .filter(
+          (item) =>
+            item &&
+            typeof item.text === "string"
+        )
+        .slice(0, 20)
+        .map((item) => ({
+          text: cleanText(item.text, 500),
+          type: [
+            "positive",
+            "warning",
+            "neutral",
+          ].includes(item.type)
+            ? item.type
+            : "neutral",
+        }))
+        .filter((item) => item.text)
+    : [];
+
+  const isValid =
+    typeof coerced.summary === "string" &&
+    coerced.summary.trim().length > 0 &&
+    numericFields.every(
+      (field) =>
+        typeof coerced[field] === "number"
+    );
+
+  if (!isValid) {
+    throw new Error(
+      "Invalid nutrition response from AI."
+    );
+  }
+
+  return {
+    summary: cleanText(
+      coerced.summary,
+      1000
+    ),
+
+    calories: coerced.calories,
+    protein: coerced.protein,
+    carbs: coerced.carbs,
+    fat: coerced.fat,
+    fiber: coerced.fiber,
+
+    feedback,
+  };
 };
 
-// =====================================================
-// RECIPE SUGGESTION
-// =====================================================
+/* =====================================================
+   RECIPE SUGGESTION
+===================================================== */
 
-/**
- * Suggests exactly 3 recipes from the given ingredients, optionally
- * personalized to a UserProfile (diet, allergies, health goals, lifestyle).
- */
-export const getRecipeSuggestion = async (ingredients, profile = null) => {
-    const profileContext = buildProfileContext(profile);
+export const getRecipeSuggestion = async (
+  ingredients,
+  profile = null
+) => {
+  if (
+    !Array.isArray(ingredients) ||
+    ingredients.length === 0
+  ) {
+    throw new Error(
+      "At least one ingredient is required."
+    );
+  }
 
-    const prompt = `
-${profileContext}Suggest exactly 3 recipes using these ingredients:
+  const safeIngredients = ingredients
+    .filter(
+      (ingredient) =>
+        typeof ingredient === "string"
+    )
+    .map((ingredient) =>
+      cleanText(ingredient, 100)
+    )
+    .filter(Boolean)
+    .slice(0, 100);
 
-${ingredients.join(", ")}
+  if (safeIngredients.length === 0) {
+    throw new Error(
+      "No valid ingredients were provided."
+    );
+  }
 
-Guidelines:
-- Prioritize using the provided ingredients as much as possible.
-- You may assume common pantry staples such as salt, oil, spices and water.
+  const profileContext =
+    buildProfileContext(profile);
+
+  const prompt = `
+${profileContext}
+
+Suggest exactly 3 practical recipes using these ingredients:
+
+${safeIngredients.join(", ")}
+
+Rules:
+- Prioritize the supplied ingredients.
+- Common staples such as salt, oil, spices and water may be assumed.
 - Avoid expensive or uncommon ingredients.
-- If a user profile is provided above, the recipes MUST respect the user's dietary preference and MUST NOT intentionally include any of the user's listed allergens.
-- Each recipe must have:
-  - name
-  - difficulty (Easy/Medium/Hard)
-  - estimated cook time
-  - list of main ingredients actually used
-  - brief cooking instructions
+- Respect the user's dietary preference.
+- Do not intentionally include listed allergens.
+- Do not make medical claims.
+- Return ONLY valid JSON.
 
-Return ONLY valid JSON in this exact format, with EXACTLY 3 recipes in the array:
+Each recipe must contain:
+- name
+- difficulty
+- cookTime
+- ingredients
+- recipe
+
+Return exactly:
 
 {
   "recipes": [
@@ -311,45 +587,75 @@ Return ONLY valid JSON in this exact format, with EXACTLY 3 recipes in the array
         "ingredient1",
         "ingredient2"
       ],
-      "recipe": "Step-by-step instructions in a few sentences."
+      "recipe": "Short step-by-step instructions."
     }
   ]
 }
 `;
 
-    const result = await enqueueRequest(prompt);
+  const result = await enqueueRequest(prompt);
 
-    // ===== VALIDATION =====
-    const recipesValid =
-        result &&
-        Array.isArray(result.recipes) &&
-        result.recipes.length === 3 &&
-        result.recipes.every(
-            (r) =>
-                r &&
-                typeof r.name === "string" && r.name.trim() &&
-                typeof r.difficulty === "string" && r.difficulty.trim() &&
-                typeof r.cookTime === "string" && r.cookTime.trim() &&
-                Array.isArray(r.ingredients) && r.ingredients.length > 0 &&
-                typeof r.recipe === "string" && r.recipe.trim()
-        );
+  const recipes = Array.isArray(result?.recipes)
+    ? result.recipes
+        .filter(
+          (recipe) =>
+            recipe &&
+            typeof recipe.name === "string" &&
+            typeof recipe.difficulty === "string" &&
+            typeof recipe.cookTime === "string" &&
+            Array.isArray(recipe.ingredients) &&
+            typeof recipe.recipe === "string"
+        )
+        .slice(0, 3)
+        .map((recipe) => ({
+          name: cleanText(recipe.name, 150),
+          difficulty: cleanText(
+            recipe.difficulty,
+            50
+          ),
+          cookTime: cleanText(
+            recipe.cookTime,
+            50
+          ),
+          ingredients: recipe.ingredients
+            .filter(
+              (item) =>
+                typeof item === "string"
+            )
+            .map((item) =>
+              cleanText(item, 150)
+            )
+            .filter(Boolean)
+            .slice(0, 30),
+          recipe: cleanText(
+            recipe.recipe,
+            3000
+          ),
+        }))
+    : [];
 
-    if (!recipesValid) {
-        console.error("Invalid Groq response for getRecipeSuggestion:", result);
-        throw new Error(
-            "Invalid Groq response for getRecipeSuggestion"
-        );
-    }
+  if (recipes.length !== 3) {
+    throw new Error(
+      "AI did not return exactly 3 valid recipes."
+    );
+  }
 
-    return result;
+  return {
+    recipes,
+  };
 };
 
-// =====================================================
-// PANTRY ROUTE WRAPPER
-// =====================================================
+/* =====================================================
+   PANTRY WRAPPER
+===================================================== */
 
-export const generateRecipesFromIngredients = async (ingredients, profile = null) => {
-    const result = await getRecipeSuggestion(ingredients, profile);
+export const generateRecipesFromIngredients =
+  async (ingredients, profile = null) => {
+    const result =
+      await getRecipeSuggestion(
+        ingredients,
+        profile
+      );
 
-    return result.recipes || [];
-};
+    return result.recipes;
+  };
