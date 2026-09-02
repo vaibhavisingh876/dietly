@@ -1,7 +1,9 @@
 import express from "express";
 import Pantry from "../models/pantry.js";
+import UserProfile from "../models/UserProfile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { generateRecipesFromIngredients } from "../utils/groqClient.js";
+import { filterRecipesForAllergies } from "../utils/allergyFilter.js";
 
 const router = express.Router();
 
@@ -82,7 +84,11 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Suggest recipes based on pantry items using Gemini
+// Suggest recipes based on pantry items + the user's dietary profile,
+// using Groq. AI is asked to avoid the user's allergens, but that's never
+// trusted alone — filterRecipesForAllergies() below is a deterministic
+// backend safety layer that drops any recipe still containing a known
+// allergen keyword. This is not medical advice; it's a best-effort filter.
 router.post("/suggest-recipes", async (req, res) => {
   try {
     const userId = req.user.id;
@@ -104,16 +110,33 @@ router.post("/suggest-recipes", async (req, res) => {
       return res.status(400).json({ error: "No pantry items available" });
     }
 
-    // Call Gemini to generate recipes
-    const recipes = await generateRecipesFromIngredients(allItems);
+    const profile = await UserProfile.findOne({ userId }).lean();
+
+    // Call Groq to generate recipes, personalized to diet/allergies/goals/lifestyle
+    let recipes = await generateRecipesFromIngredients(allItems, profile);
+
+    // Deterministic safety layer on top of the AI's own allergen avoidance
+    const allergies = profile?.allergies || [];
+    if (allergies.length > 0) {
+      const beforeCount = recipes.length;
+      recipes = filterRecipesForAllergies(recipes, allergies);
+      if (recipes.length < beforeCount) {
+        console.log(
+          `Filtered ${beforeCount - recipes.length} recipe(s) that conflicted with user allergies: ${allergies.join(", ")}`
+        );
+      }
+    }
 
     res.json({
       success: true,
-      recipes
+      recipes,
+      personalized: Boolean(
+        profile && (profile.dietaryPreferences || allergies.length || (profile.healthGoals || []).length || profile.lifestyle)
+      ),
     });
   } catch (err) {
     console.error("Suggest recipes error:", err);
-    // If Gemini fails, return 500
+    // If Groq fails, return 500
     res.status(500).json({ error: "Failed to generate recipe suggestions" });
   }
 });

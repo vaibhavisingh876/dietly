@@ -5,7 +5,6 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import PantryRoutes from "./routes/Pantry.js";
-import aiRoutes from "./routes/ai.js";
 import ProgressRoutes from "./routes/Progress.js";
 import mealRoutes from "./routes/meals.js";
 import calorieRoutes from "./routes/calorie.js";
@@ -44,9 +43,14 @@ app.get("/", (req, res) => {
 });
 
 // API routes
+//
+// Note: the old unauthenticated POST /api/ai/analyze route has been
+// removed. Meal analysis is now exclusively served from the authenticated
+// POST /api/meals/analyze (see routes/meals.js) — a single implementation
+// instead of two overlapping ones, and it can no longer be reached without
+// a valid JWT.
 app.use("/api/auth", authRoutes);
 app.use("/api/pantry", PantryRoutes);
-app.use("/api/ai", aiRoutes);
 app.use("/api/progress", ProgressRoutes);
 app.use("/api/meals", mealRoutes);
 app.use("/api/calorie", calorieRoutes);

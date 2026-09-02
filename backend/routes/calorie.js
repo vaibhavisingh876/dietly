@@ -1,53 +1,57 @@
 import express from "express";
-import MealEntry from "../models/MealEntry.js";
+import Meal from "../models/Meal.js";
+import UserProfile from "../models/UserProfile.js";
 import { analyzeMeal } from "../utils/groqClient.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { resolveTimezone, getLocalDateString } from "../utils/dateUtils.js";
+import { findOrCreateEntry, recalcTotalCalories } from "../utils/mealHelpers.js";
+import { buildAllergyWarnings } from "../utils/allergyFilter.js";
 
 const router = express.Router();
 
 // Protect all routes
 router.use(authMiddleware);
 
-// Helper: today's date as YYYY-MM-DD string
-const todayString = () => new Date().toISOString().split("T")[0];
+const ALLOWED_MEAL_TYPES = ["breakfast", "lunch", "dinner", "eveningSnack"];
 
-// Helper: find or create today's entry for the authenticated user
-const findOrCreateTodayEntry = async (userId) => {
-  const today = todayString();
-  let entry = await MealEntry.findOne({ userId, date: today });
-  if (!entry) {
-    entry = await MealEntry.create({
-      userId,
-      date: today,
-      dailyGoal: 2000,
-      meals: { breakfast: 0, lunch: 0, dinner: 0, eveningSnack: 0 },
-      totalCalories: 0,
-      waterIntake: 0,
-    });
-  }
-  return entry;
+// Maps the four calorie-bucket keys used here to the Meal model's
+// mealType enum, so meals logged from this page also show up correctly
+// in Meal History / Progress.
+const MEAL_TYPE_LABELS = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
+  eveningSnack: "Snack",
 };
 
+const DEFAULT_CALORIE_GOAL = 2000;
+
+/**
+ * Resolves the calorie goal to use for a brand-new MealEntry: the user's
+ * override, then their computed profile goal, and only a hardcoded 2000
+ * when neither is available (e.g. onboarding not completed yet).
+ */
+async function resolveDailyGoal(userId) {
+  const profile = await UserProfile.findOne({ userId }).lean();
+  return profile?.calorieGoalOverride || profile?.calorieGoal || DEFAULT_CALORIE_GOAL;
+}
+
 // --- AI PARSER (throws on failure, no silent 0) ---
-const getCaloriesFromAI = async (mealText) => {
-  const analysis = await analyzeMeal(mealText);
-  const calObj = analysis.macros?.find(
-    (m) => m.name?.toLowerCase() === "calories"
-  );
-  if (!calObj) {
-    throw new Error("AI response missing calories");
-  }
-  const calories = parseInt(calObj.value.replace(/[^\d]/g, ""));
-  if (isNaN(calories) || calories < 0) {
+const getNutritionFromAI = async (mealText, profile) => {
+  const analysis = await analyzeMeal(mealText, profile);
+  if (typeof analysis.calories !== "number" || analysis.calories < 0) {
     throw new Error("Invalid calorie value from AI");
   }
-  return calories;
+  return analysis;
 };
 
 // --- GET TODAY ---
 router.get("/today", async (req, res) => {
   try {
-    const entry = await findOrCreateTodayEntry(req.user.id);
+    const tz = resolveTimezone(req);
+    const date = getLocalDateString(tz);
+    const dailyGoalFallback = await resolveDailyGoal(req.user.id);
+    const entry = await findOrCreateEntry(req.user.id, date, dailyGoalFallback);
     res.json({ entry });
   } catch (err) {
     console.error(err);
@@ -55,12 +59,11 @@ router.get("/today", async (req, res) => {
   }
 });
 
-// --- SET MEAL CALORIES ---
+// --- SET MEAL CALORIES (manual, replaces the bucket's value) ---
 router.post("/set-meal-calories", async (req, res) => {
   const { mealType, calories } = req.body;
 
-  const allowedMeals = ["breakfast", "lunch", "dinner", "eveningSnack"];
-  if (!mealType || !allowedMeals.includes(mealType)) {
+  if (!mealType || !ALLOWED_MEAL_TYPES.includes(mealType)) {
     return res.status(400).json({ error: "Invalid mealType" });
   }
 
@@ -70,13 +73,13 @@ router.post("/set-meal-calories", async (req, res) => {
   }
 
   try {
-    const entry = await findOrCreateTodayEntry(req.user.id);
+    const tz = resolveTimezone(req);
+    const date = getLocalDateString(tz);
+    const dailyGoalFallback = await resolveDailyGoal(req.user.id);
+    const entry = await findOrCreateEntry(req.user.id, date, dailyGoalFallback);
+
     entry.meals[mealType] = cal;
-
-    // Recalculate totalCalories
-    const mealValues = Object.values(entry.meals);
-    entry.totalCalories = mealValues.reduce((sum, val) => sum + val, 0);
-
+    recalcTotalCalories(entry);
     await entry.save();
 
     res.json({ message: "Updated", entry });
@@ -86,44 +89,80 @@ router.post("/set-meal-calories", async (req, res) => {
   }
 });
 
-// --- ADD MEAL USING AI TEXT ---
+// --- ADD MEAL USING AI TEXT (personalized, also logs to Meal history) ---
 router.post("/add-meal-text", async (req, res) => {
   const { mealType, mealText } = req.body;
 
-  const allowedMeals = ["breakfast", "lunch", "dinner", "eveningSnack"];
-  if (!mealType || !allowedMeals.includes(mealType) || !mealText) {
+  if (!mealType || !ALLOWED_MEAL_TYPES.includes(mealType) || !mealText) {
     return res.status(400).json({ error: "Invalid input" });
   }
 
   try {
-    const calories = await getCaloriesFromAI(mealText);
-    const entry = await findOrCreateTodayEntry(req.user.id);
+    const profile = await UserProfile.findOne({ userId: req.user.id }).lean();
 
-    entry.meals[mealType] += calories;
-
-    // Recalculate totalCalories
-    const mealValues = Object.values(entry.meals);
-    entry.totalCalories = mealValues.reduce((sum, val) => sum + val, 0);
-
-    await entry.save();
-
-    res.json({ calories, entry });
-  } catch (err) {
-    console.error("Meal processing error:", err);
-    // Send a clear error when AI extraction fails
-    if (err.message?.includes("AI") || err.message?.includes("calorie")) {
+    let nutrition;
+    try {
+      nutrition = await getNutritionFromAI(mealText, profile);
+    } catch (e) {
+      console.error("Meal processing error:", e.message);
       return res.status(500).json({ error: "Failed to analyze meal. Please try again later." });
     }
+
+    const tz = resolveTimezone(req);
+    const date = getLocalDateString(tz);
+    const dailyGoalFallback = await resolveDailyGoal(req.user.id);
+
+    const entry = await findOrCreateEntry(req.user.id, date, dailyGoalFallback);
+    entry.meals[mealType] = (entry.meals[mealType] || 0) + nutrition.calories;
+    recalcTotalCalories(entry);
+    await entry.save();
+
+    // Also persist as a Meal so it shows up in Meal History / Progress —
+    // this is genuinely AI-generated, so aiGenerated is correctly true.
+    const extraWarnings = buildAllergyWarnings(mealText, nutrition.summary, profile?.allergies || []);
+    const existingWarningTexts = new Set(
+      nutrition.feedback.filter((f) => f.type === "warning").map((f) => f.text)
+    );
+    const feedback = [
+      ...nutrition.feedback,
+      ...extraWarnings.filter((w) => !existingWarningTexts.has(w.text)),
+    ];
+
+    await Meal.create({
+      userId: req.user.id,
+      name: mealText.trim().slice(0, 80),
+      mealText: mealText.trim(),
+      calories: nutrition.calories,
+      protein: nutrition.protein,
+      carbs: nutrition.carbs,
+      fat: nutrition.fat,
+      fiber: nutrition.fiber,
+      summary: nutrition.summary,
+      feedback,
+      mealType: MEAL_TYPE_LABELS[mealType],
+      aiGenerated: true,
+      date,
+    });
+
+    res.json({ calories: nutrition.calories, entry });
+  } catch (err) {
+    console.error("Meal processing error:", err);
     res.status(500).json({ error: "Meal processing failed" });
   }
 });
 
-// --- WATER ---
-router.post("/add-water", async (req, res) => {
+// --- WATER: explicitly SETS today's total water intake (not additive).
+// The frontend labels this as "enter the total you want to record" —
+// this endpoint name and behavior are kept consistent with that.
+router.post("/set-water", async (req, res) => {
   const { amount } = req.body;
 
   try {
-    const entry = await findOrCreateTodayEntry(req.user.id);
+    const tz = resolveTimezone(req);
+    const date = getLocalDateString(tz);
+    const dailyGoalFallback = await resolveDailyGoal(req.user.id);
+    const entry = await findOrCreateEntry(req.user.id, date, dailyGoalFallback);
+
     entry.waterIntake = Math.max(0, parseInt(amount) || 0);
     await entry.save();
 

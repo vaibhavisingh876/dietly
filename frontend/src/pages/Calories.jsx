@@ -193,7 +193,7 @@ export default function Calories() {
       setWaterLoading(true);
       setError("");
 
-      const response = await api.post("/calorie/add-water", {
+      const response = await api.post("/calorie/set-water", {
         amount,
       });
 

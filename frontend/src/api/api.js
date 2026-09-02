@@ -11,12 +11,24 @@ const api = axios.create({
   },
 });
 
-// Attach JWT to every request
+// Attach JWT + the browser's IANA timezone to every request. The backend
+// uses X-Timezone to resolve "today" per user (see backend/utils/dateUtils.js)
+// instead of the server's UTC clock, so calorie/meal/progress dates line up
+// with what the user actually sees on their device.
 api.interceptors.request.use((config) => {
   const token = getToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) {
+      config.headers["X-Timezone"] = timezone;
+    }
+  } catch {
+    // Intl not available / unsupported timezone — backend falls back to a default.
   }
 
   return config;

@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
@@ -178,44 +177,70 @@ const enqueueRequest = (prompt) => {
 };
 
 // =====================================================
+// PROFILE CONTEXT (shared by meal analysis + recipes)
+// =====================================================
+
+/**
+ * Turns a UserProfile document (or plain object) into a short, plain-text
+ * context block the AI can use as *contextual guidance* — never as a basis
+ * for medical claims. Fields that aren't set are simply omitted.
+ */
+function buildProfileContext(profile) {
+    if (!profile) return "";
+
+    const lines = [];
+    if (profile.age) lines.push(`Age: ${profile.age}`);
+    if (profile.gender) lines.push(`Gender: ${profile.gender}`);
+    if (profile.height) lines.push(`Height: ${profile.height} cm`);
+    if (profile.weight) lines.push(`Weight: ${profile.weight} kg`);
+    if (profile.dietaryPreferences) lines.push(`Dietary preference: ${profile.dietaryPreferences}`);
+    if (Array.isArray(profile.allergies) && profile.allergies.length) {
+        lines.push(`Allergies/intolerances (must be flagged if present in the meal/recipe): ${profile.allergies.join(", ")}`);
+    }
+    if (Array.isArray(profile.healthGoals) && profile.healthGoals.length) {
+        lines.push(`Health goals: ${profile.healthGoals.join(", ")}`);
+    }
+    if (profile.lifestyle) lines.push(`Lifestyle / activity level: ${profile.lifestyle}`);
+
+    const goal = profile.calorieGoalOverride || profile.calorieGoal;
+    if (goal) lines.push(`Estimated daily calorie goal: ~${goal} kcal`);
+
+    if (lines.length === 0) return "";
+
+    return `User profile (use only as contextual guidance, never as medical advice):\n${lines.join("\n")}\n\n`;
+}
+
+// =====================================================
 // ANALYZE MEAL
 // =====================================================
 
-export const analyzeMeal = async (mealText) => {
-    const prompt = `
-Analyze this meal: "${mealText}".
+/**
+ * Analyzes a meal, optionally personalized to a UserProfile.
+ * `profile` is optional — when omitted, the analysis is generic.
+ */
+export const analyzeMeal = async (mealText, profile = null) => {
+    const profileContext = buildProfileContext(profile);
 
-Return ONLY a JSON object exactly in this format:
+    const prompt = `
+${profileContext}Analyze this meal: "${mealText}".
+
+If a user profile is provided above, use it as contextual guidance only:
+- If the meal conflicts with the user's dietary preference or listed allergies, clearly say so in feedback with type "warning".
+- If the meal seems notably high or low in calories relative to the user's health goals, mention it with type "warning" or "positive" as appropriate.
+- Never provide medical advice or diagnoses — only general nutritional observations.
+
+Return ONLY a JSON object exactly in this format (all nutrition fields must be plain numbers, not strings):
 
 {
-  "summary": "Short summary of the meal",
-  "macros": [
-    {
-      "name": "Calories",
-      "value": "420 kcal"
-    },
-    {
-      "name": "Protein",
-      "value": "32g"
-    },
-    {
-      "name": "Carbs",
-      "value": "48g"
-    },
-    {
-      "name": "Fiber",
-      "value": "15g"
-    }
-  ],
+  "summary": "Short 1-2 sentence summary of the meal",
+  "calories": 420,
+  "protein": 32,
+  "carbs": 48,
+  "fat": 15,
+  "fiber": 8,
   "feedback": [
-    {
-      "text": "Great protein source",
-      "type": "positive"
-    },
-    {
-      "text": "Consider drinking more water",
-      "type": "neutral"
-    }
+    { "text": "Great protein source", "type": "positive" },
+    { "text": "Contains dairy, which conflicts with your dairy allergy", "type": "warning" }
   ]
 }
 `;
@@ -223,24 +248,42 @@ Return ONLY a JSON object exactly in this format:
     const result = await enqueueRequest(prompt);
 
     // ===== VALIDATION =====
-    if (
-        !result.summary ||
-        !Array.isArray(result.macros) ||
-        !Array.isArray(result.feedback)
-    ) {
+    const numericFields = ["calories", "protein", "carbs", "fat", "fiber"];
+    const coerced = { ...result };
+    for (const field of numericFields) {
+        const value = typeof coerced[field] === "string" ? Number(coerced[field]) : coerced[field];
+        coerced[field] = value;
+    }
+
+    const isValid =
+        coerced &&
+        typeof coerced.summary === "string" &&
+        coerced.summary.trim().length > 0 &&
+        numericFields.every((f) => typeof coerced[f] === "number" && !Number.isNaN(coerced[f]) && coerced[f] >= 0) &&
+        Array.isArray(coerced.feedback) &&
+        coerced.feedback.every((f) => f && typeof f.text === "string" && typeof f.type === "string");
+
+    if (!isValid) {
+        console.error("Invalid Groq response for analyzeMeal:", result);
         throw new Error("Invalid Groq response for analyzeMeal");
     }
 
-    return result;
+    return coerced;
 };
 
 // =====================================================
 // RECIPE SUGGESTION
 // =====================================================
 
-export const getRecipeSuggestion = async (ingredients) => {
+/**
+ * Suggests exactly 3 recipes from the given ingredients, optionally
+ * personalized to a UserProfile (diet, allergies, health goals, lifestyle).
+ */
+export const getRecipeSuggestion = async (ingredients, profile = null) => {
+    const profileContext = buildProfileContext(profile);
+
     const prompt = `
-Suggest exactly 3 recipes using these ingredients:
+${profileContext}Suggest exactly 3 recipes using these ingredients:
 
 ${ingredients.join(", ")}
 
@@ -248,6 +291,7 @@ Guidelines:
 - Prioritize using the provided ingredients as much as possible.
 - You may assume common pantry staples such as salt, oil, spices and water.
 - Avoid expensive or uncommon ingredients.
+- If a user profile is provided above, the recipes MUST respect the user's dietary preference and MUST NOT intentionally include any of the user's listed allergens.
 - Each recipe must have:
   - name
   - difficulty (Easy/Medium/Hard)
@@ -255,7 +299,7 @@ Guidelines:
   - list of main ingredients actually used
   - brief cooking instructions
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON in this exact format, with EXACTLY 3 recipes in the array:
 
 {
   "recipes": [
@@ -276,11 +320,22 @@ Return ONLY valid JSON in this exact format:
     const result = await enqueueRequest(prompt);
 
     // ===== VALIDATION =====
-    if (
-        !result.recipes ||
-        !Array.isArray(result.recipes) ||
-        result.recipes.length === 0
-    ) {
+    const recipesValid =
+        result &&
+        Array.isArray(result.recipes) &&
+        result.recipes.length === 3 &&
+        result.recipes.every(
+            (r) =>
+                r &&
+                typeof r.name === "string" && r.name.trim() &&
+                typeof r.difficulty === "string" && r.difficulty.trim() &&
+                typeof r.cookTime === "string" && r.cookTime.trim() &&
+                Array.isArray(r.ingredients) && r.ingredients.length > 0 &&
+                typeof r.recipe === "string" && r.recipe.trim()
+        );
+
+    if (!recipesValid) {
+        console.error("Invalid Groq response for getRecipeSuggestion:", result);
         throw new Error(
             "Invalid Groq response for getRecipeSuggestion"
         );
@@ -293,9 +348,8 @@ Return ONLY valid JSON in this exact format:
 // PANTRY ROUTE WRAPPER
 // =====================================================
 
-export const generateRecipesFromIngredients = async (ingredients) => {
-    const result = await getRecipeSuggestion(ingredients);
+export const generateRecipesFromIngredients = async (ingredients, profile = null) => {
+    const result = await getRecipeSuggestion(ingredients, profile);
 
     return result.recipes || [];
 };
-
