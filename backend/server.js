@@ -21,29 +21,40 @@ app.disable("x-powered-by");
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL
       .split(",")
-      .map((origin) => origin.trim())
+      .map((origin) => origin.trim().replace(/\/$/, ""))
       .filter(Boolean)
   : ["http://localhost:5173"];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
+console.log("Allowed CORS origins:", allowedOrigins);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests without an Origin header
+    // (Postman, server-to-server requests, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
 
-      return callback(
-        new Error("Not allowed by CORS")
-      );
-    },
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-    credentials: true,
-  })
-);
+    console.error("Blocked CORS origin:", origin);
+
+    return callback(new Error("Not allowed by CORS"));
+  },
+
+  credentials: true,
+
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+
+// Explicitly handle browser preflight requests
+app.options("*", cors(corsOptions));
 
 /* -------------------- Middleware -------------------- */
 
@@ -64,30 +75,15 @@ app.get("/", (req, res) => {
 
 /* -------------------- API Routes -------------------- */
 
-app.use(
-  "/api/auth",
-  authRoutes
-);
+app.use("/api/auth", authRoutes);
 
-app.use(
-  "/api/pantry",
-  PantryRoutes
-);
+app.use("/api/pantry", PantryRoutes);
 
-app.use(
-  "/api/progress",
-  ProgressRoutes
-);
+app.use("/api/progress", ProgressRoutes);
 
-app.use(
-  "/api/meals",
-  mealRoutes
-);
+app.use("/api/meals", mealRoutes);
 
-app.use(
-  "/api/calorie",
-  calorieRoutes
-);
+app.use("/api/calorie", calorieRoutes);
 
 /* -------------------- API 404 -------------------- */
 
@@ -100,54 +96,42 @@ app.use("/api", (req, res) => {
 
 /* -------------------- Global Error Handler -------------------- */
 
-app.use(
-  (err, req, res, next) => {
-    console.error(
-      "Server error:",
-      err
-    );
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
 
-    if (
-      err.message ===
-      "Not allowed by CORS"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Origin not allowed",
-      });
-    }
-
-    if (
-      err instanceof SyntaxError &&
-      err.status === 400 &&
-      err.body
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid JSON payload",
-      });
-    }
-
-    return res.status(500).json({
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({
       success: false,
-      message:
-        "Internal server error",
+      message: "Origin not allowed",
     });
   }
-);
+
+  if (
+    err instanceof SyntaxError &&
+    err.status === 400 &&
+    err.body
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON payload",
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Internal server error",
+  });
+});
 
 /* -------------------- Server -------------------- */
 
-const PORT =
-  Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 async function start() {
   try {
     await connectDB();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(
         `Dietly backend running on port ${PORT}`
       );
