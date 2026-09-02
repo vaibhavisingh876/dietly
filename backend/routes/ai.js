@@ -1,5 +1,5 @@
 import express from "express";
-import { analyzeMeal, getRecipeSuggestion } from "../utils/geminiClient.js";
+import { analyzeMeal, getRecipeSuggestion } from "../utils/groqClient.js";
 
 const router = express.Router();
 

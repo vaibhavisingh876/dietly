@@ -1,6 +1,6 @@
 import express from "express";
 import MealEntry from "../models/MealEntry.js";
-import { analyzeMeal } from "../utils/geminiClient.js";
+import { analyzeMeal } from "../utils/groqClient.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();

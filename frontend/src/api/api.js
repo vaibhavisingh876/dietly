@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getToken, logout } from "../utils/auth";
 
 const API_BASE =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -12,7 +13,7 @@ const api = axios.create({
 
 // Attach JWT to every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -31,12 +32,7 @@ api.interceptors.response.use(
     );
 
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
-
-      window.dispatchEvent(new Event("authChanged"));
-      window.location.href = "/login";
+      logout(); // clears both storages and redirects to /login
     }
 
     return Promise.reject(error);

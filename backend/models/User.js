@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     email: {
       type: String,
       required: true,
@@ -14,7 +19,6 @@ const userSchema = new mongoose.Schema(
     country: {
       type: String, // Required by auth.js register route
     },
-    // 💡 Add reference to the UserProfile model
     profile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'UserProfile',

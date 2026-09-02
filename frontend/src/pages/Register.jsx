@@ -29,7 +29,7 @@ export default function DietlyRegister() {
     setError(null);
 
     // Frontend validation
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -48,14 +48,13 @@ export default function DietlyRegister() {
     setLoading(true);
 
     try {
-      // Send only backend-compatible fields
       await api.post('/auth/register', {
+        name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
         country: formData.country || "" // optional
       });
 
-      console.log('✅ Registration successful');
       navigate('/login?registered=true');
 
     } catch (err) {
@@ -67,7 +66,6 @@ export default function DietlyRegister() {
   };
 
   const handleSocialLogin = (provider) => {
-    console.log(`Login with ${provider}`);
     setError(`${provider} login is not yet implemented.`);
   };
 
@@ -125,7 +123,7 @@ export default function DietlyRegister() {
 
             {/* Registration Form */}
             <div className="space-y-4">
-              {/* Name (Frontend only) */}
+              {/* Name */}
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                 <input
@@ -162,7 +160,7 @@ export default function DietlyRegister() {
                 </div>
               </div>
 
-              {/* Confirm Password (Frontend only) */}
+              {/* Confirm Password */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">

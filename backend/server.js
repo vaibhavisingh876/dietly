@@ -1,8 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import mongoose from "mongoose";
 
+import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import PantryRoutes from "./routes/Pantry.js";
 import aiRoutes from "./routes/ai.js";
@@ -13,13 +13,34 @@ import calorieRoutes from "./routes/calorie.js";
 dotenv.config();
 const app = express();
 
-// Middlewares
-app.use(cors());
+// --- CORS ---
+// FRONTEND_URL can be a comma-separated list of allowed origins for
+// production. If unset (local dev), allow all origins so `npm run dev`
+// keeps working without extra setup.
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : null;
+
+app.use(
+  cors(
+    allowedOrigins
+      ? {
+          origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error("Not allowed by CORS"));
+            }
+          },
+        }
+      : {}
+  )
+);
 app.use(express.json());
 
 // Health check
 app.get("/", (req, res) => {
-  res.json({ status: "success", message: "Backend is running 🚀" });
+  res.json({ status: "success", message: "Backend is running" });
 });
 
 // API routes
@@ -30,20 +51,21 @@ app.use("/api/progress", ProgressRoutes);
 app.use("/api/meals", mealRoutes);
 app.use("/api/calorie", calorieRoutes);
 
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 10000, // 10s timeout
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
-    console.error("Check Atlas whitelist / network connection!");
-    process.exit(1);
-  });
+// 404 for unknown API routes
+app.use("/api", (req, res) => {
+  res.status(404).json({ success: false, message: "Not found" });
+});
 
-// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+async function start() {
+  try {
+    await connectDB();
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (err) {
+    console.error("Failed to start server:", err.message);
+    process.exit(1);
+  }
+}
+
+start();
