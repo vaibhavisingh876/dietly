@@ -1,9 +1,3 @@
-// src/pages/Progress.jsx
-//
-// Real Progress Dashboard, backed entirely by GET /api/progress/dashboard.
-// The backend derives the dashboard from persisted MealEntry + Meal
-// documents.
-
 import React, { useEffect, useState } from "react";
 import api from "../api/api";
 
@@ -15,6 +9,7 @@ import {
   Loader2,
   AlertTriangle,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -37,8 +32,11 @@ const MACRO_COLORS = {
   Protein: "#3b82f6",
   Carbs: "#f97316",
   Fat: "#e11d48",
-  Fiber: "#8b5cf6",
 };
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
 
 function formatShortDate(dateStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -80,6 +78,24 @@ function StatCard({
           {sub}
         </p>
       )}
+    </div>
+  );
+}
+
+function ChartInsight({ text }) {
+  if (!text) return null;
+
+  return (
+    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
+      <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+          AI interpretation
+        </p>
+        <p className="mt-1 text-sm leading-6 text-slate-700">
+          {text}
+        </p>
+      </div>
     </div>
   );
 }
@@ -158,6 +174,7 @@ export default function ProgressPage() {
 
   const macroChartData = dashboard
     ? Object.entries(dashboard.macros)
+        .filter(([key]) => key !== "fiber")
         .map(([key, value]) => ({
           name:
             key[0].toUpperCase() +
@@ -263,6 +280,26 @@ export default function ProgressPage() {
               />
             </div>
 
+            {dashboard.insights?.overall && (
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+                <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-indigo-600" />
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    Progress summary
+                  </p>
+                  <p className="mt-1 leading-6 text-slate-600">
+                    {dashboard.insights.overall}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {dashboard.insightsStatus === "unavailable" && (
+              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                The charts are available, but their AI interpretations could not be generated right now. Please refresh to try again.
+              </div>
+            )}
+
             {/* CALORIES TREND + GOAL */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
@@ -292,11 +329,20 @@ export default function ProgressPage() {
                         stroke="#f0f0f0"
                       />
 
-                      <XAxis dataKey="label" />
+                      <XAxis
+                        dataKey="label"
+                        interval={days === 30 ? 4 : days === 14 ? 1 : 0}
+                      />
 
-                      <YAxis />
+                      <YAxis
+                        width={55}
+                        tickFormatter={(value) => formatNumber(value)}
+                        label={{ value: "kcal", angle: -90, position: "insideLeft" }}
+                      />
 
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name) => [`${formatNumber(value)} kcal`, name]}
+                      />
 
                       <Legend />
 
@@ -322,6 +368,8 @@ export default function ProgressPage() {
                     No calorie data in this range yet.
                   </p>
                 )}
+
+                <ChartInsight text={dashboard.insights?.calorieTrend} />
               </div>
 
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
@@ -351,11 +399,20 @@ export default function ProgressPage() {
                         stroke="#f0f0f0"
                       />
 
-                      <XAxis dataKey="label" />
+                      <XAxis
+                        dataKey="label"
+                        interval={days === 30 ? 4 : days === 14 ? 1 : 0}
+                      />
 
-                      <YAxis />
+                      <YAxis
+                        width={55}
+                        tickFormatter={(value) => formatNumber(value)}
+                        label={{ value: "kcal", angle: -90, position: "insideLeft" }}
+                      />
 
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name) => [`${formatNumber(value)} kcal`, name]}
+                      />
 
                       <Legend />
 
@@ -389,6 +446,8 @@ export default function ProgressPage() {
                     No calorie data in this range yet.
                   </p>
                 )}
+
+                <ChartInsight text={dashboard.insights?.goalComparison} />
               </div>
             </div>
 
@@ -396,9 +455,9 @@ export default function ProgressPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Macro Distribution{" "}
+                  Logged Macro Totals{" "}
                   <span className="text-sm font-normal text-gray-400">
-                    (grams, all tracked meals)
+                    (grams; protein, carbs and fat)
                   </span>
                 </h3>
 
@@ -415,7 +474,9 @@ export default function ProgressPage() {
                         cx="50%"
                         cy="50%"
                         outerRadius={90}
-                        label
+                        label={({ name, percent }) =>
+                          `${name} ${(percent * 100).toFixed(0)}%`
+                        }
                       >
                         {macroChartData.map(
                           (entry, i) => (
@@ -434,7 +495,9 @@ export default function ProgressPage() {
 
                       <Legend />
 
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name) => [`${formatNumber(value)} g`, name]}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -443,6 +506,14 @@ export default function ProgressPage() {
                     via the Analyze page.
                   </p>
                 )}
+
+                {dashboard.macros.fiber > 0 && (
+                  <p className="mt-2 text-center text-sm text-gray-500">
+                    Fibre logged separately: {formatNumber(Math.round(dashboard.macros.fiber))} g
+                  </p>
+                )}
+
+                <ChartInsight text={dashboard.insights?.macroDistribution} />
               </div>
 
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
@@ -473,11 +544,20 @@ export default function ProgressPage() {
                         stroke="#f0f0f0"
                       />
 
-                      <XAxis dataKey="label" />
+                      <XAxis
+                        dataKey="label"
+                        interval={days === 30 ? 4 : days === 14 ? 1 : 0}
+                      />
 
-                      <YAxis />
+                      <YAxis
+                        width={55}
+                        tickFormatter={(value) => formatNumber(value)}
+                        label={{ value: "ml", angle: -90, position: "insideLeft" }}
+                      />
 
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value) => [`${formatNumber(value)} ml`, "Water"]}
+                      />
 
                       <Bar
                         dataKey="water"
@@ -498,6 +578,8 @@ export default function ProgressPage() {
                     track it on the Calories page.
                   </p>
                 )}
+
+                <ChartInsight text={dashboard.insights?.waterTrend} />
               </div>
             </div>
 

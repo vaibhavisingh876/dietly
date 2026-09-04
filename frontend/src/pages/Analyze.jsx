@@ -160,10 +160,6 @@ export default function Analyze() {
   const nutritionData = result
     ? [
         {
-          name: "Calories",
-          value: toNumber(result.calories),
-        },
-        {
           name: "Protein",
           value: toNumber(result.protein),
         },
@@ -329,35 +325,53 @@ export default function Analyze() {
               </div>
 
               {nutritionData.length > 0 && (
-                <div className="h-72">
-                  <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                  >
-                    <BarChart
-                      data={nutritionData}
-                      margin={{
-                        top: 10,
-                        right: 10,
-                        left: 0,
-                        bottom: 10,
-                      }}
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-slate-700">
+                    Estimated nutrients in grams
+                  </h3>
+                  <div className="h-72">
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <BarChart
+                        data={nutritionData}
+                        margin={{
+                          top: 10,
+                          right: 10,
+                          left: 5,
+                          bottom: 10,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
 
-                      <XAxis dataKey="name" />
+                        <XAxis dataKey="name" />
 
-                      <YAxis />
+                        <YAxis
+                          width={48}
+                          label={{
+                            value: "grams",
+                            angle: -90,
+                            position: "insideLeft",
+                          }}
+                        />
 
-                      <Tooltip />
+                        <Tooltip
+                          formatter={(value, name) => [
+                            `${Math.round(toNumber(value) * 10) / 10} g`,
+                            name === "value" ? "Amount" : name,
+                          ]}
+                        />
 
-                      <Bar
-                        dataKey="value"
-                        fill="#6366f1"
-                        radius={[6, 6, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                        <Bar
+                          dataKey="value"
+                          name="Amount"
+                          fill="#6366f1"
+                          radius={[6, 6, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               )}
             </div>

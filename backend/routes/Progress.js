@@ -6,6 +6,7 @@ import UserProfile from "../models/Userprofile.js";
 import Progress from "../models/progress.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
+import { generateProgressInsights } from "../utils/geminiClient.js";
 
 import {
   resolveTimezone,
@@ -498,6 +499,47 @@ router.get(
           })
         );
 
+      const dashboard = {
+        rangeDays: days,
+
+        today: {
+          date: today,
+          calories: todayCalories,
+          goal: todayGoal,
+          remaining: Math.max(0, todayGoal - todayCalories),
+          water: todayWater,
+        },
+
+        averageCalories,
+        caloriesTrend,
+        waterTrend,
+        macros,
+        mealsTracked: meals.length,
+        mealsPerDay,
+        recentMeals,
+
+        streak: {
+          current: streaks.currentStreak,
+          longest: streaks.longestStreak,
+        },
+      };
+
+      let insights = null;
+      let insightsStatus = "not_requested";
+
+      if (meals.length > 0 || daysWithCalories.length > 0) {
+        try {
+          insights = await generateProgressInsights(dashboard);
+          insightsStatus = "generated";
+        } catch (insightError) {
+          insightsStatus = "unavailable";
+          console.error(
+            "Progress insight generation failed:",
+            insightError?.message || insightError
+          );
+        }
+      }
+
       /* ---------------------------------------------
          RESPONSE
       --------------------------------------------- */
@@ -506,44 +548,9 @@ router.get(
         success: true,
 
         dashboard: {
-          rangeDays: days,
-
-          today: {
-            date: today,
-            calories: todayCalories,
-            goal: todayGoal,
-
-            remaining: Math.max(
-              0,
-              todayGoal -
-                todayCalories
-            ),
-
-            water: todayWater,
-          },
-
-          averageCalories,
-
-          caloriesTrend,
-
-          waterTrend,
-
-          macros,
-
-          mealsTracked:
-            meals.length,
-
-          mealsPerDay,
-
-          recentMeals,
-
-          streak: {
-            current:
-              streaks.currentStreak,
-
-            longest:
-              streaks.longestStreak,
-          },
+          ...dashboard,
+          insights,
+          insightsStatus,
         },
       });
     } catch (error) {
