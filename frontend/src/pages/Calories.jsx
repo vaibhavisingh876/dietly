@@ -472,7 +472,7 @@ export default function Calories() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 px-4 sm:px-6 lg:px-8 py-10">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 px-4 sm:px-6 lg:px-8 pt-28 pb-10">
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* Header */}
