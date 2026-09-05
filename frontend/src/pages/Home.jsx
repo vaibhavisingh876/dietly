@@ -294,54 +294,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-24 bg-gray-50 px-6 md:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-12">
-            Meet Our Team
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            {[
-              { name: "Nitya Singh", initials: "NS" },
-              { name: "Shreya Bisht", initials: "SB" },
-              { name: "Shreya Rathore", initials: "SR" },
-              { name: "Vaibhavi Singh", initials: "VS" },
-            ].map((member) => (
-              <div key={member.name} className="text-center">
-                <div className="w-36 h-36 mx-auto rounded-full bg-gradient-to-br from-green-500 to-emerald-400 flex items-center justify-center text-white text-4xl font-bold shadow-lg mb-4">
-                  {member.initials}
-                </div>
-
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {member.name}
-                </h3>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-600 px-6 text-center">
-        <h2 className="text-4xl font-bold text-white mb-5">
-          Ready to understand your meals better?
-        </h2>
-
-        <p className="text-green-50 text-lg mb-8">
-          Start logging your meals and let Dietly do the analysis.
-        </p>
-
-        <button
-          type="button"
-          onClick={handleGetStarted}
-          className="inline-flex items-center gap-2 bg-white text-green-700 px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-green-50 transition"
-        >
-          Start Using Dietly
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </section>
-
+      
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12 px-6 md:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">

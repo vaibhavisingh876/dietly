@@ -256,7 +256,7 @@ export default function Profile() {
       if (!response.data?.success) {
         throw new Error(
           response.data?.message ||
-            "Failed to update profile."
+          "Failed to update profile."
         );
       }
 
@@ -356,25 +356,25 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 text-slate-900 flex flex-col items-center justify-center px-4">
         <AlertTriangle className="w-8 h-8 mb-3 text-yellow-400" />
 
-        <p className="text-gray-300 text-center">
+        <p className="text-slate-600 text-center">
           Failed to load your profile.
         </p>
 
         <button
           type="button"
           onClick={fetchProfile}
-          className="mt-4 px-5 py-2 bg-green-500 hover:bg-green-600 rounded-lg"
+          className="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 rounded-xl"
         >
           Try Again
         </button>
@@ -383,441 +383,480 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pt-28 pb-10">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-          {/* HEADER */}
-          <div className="p-8 text-center border-b border-gray-700">
-            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-              <User className="w-12 h-12 text-green-400" />
-            </div>
-
-            <h1 className="text-2xl font-bold">
-              {user.name ||
-                user.email?.split("@")[0]}
-            </h1>
-
-            <p className="text-gray-400 text-sm mt-1">
-              {user.email}
-            </p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-emerald-50 text-slate-900 pt-28 pb-12">
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden">
+          
 
           {/* MESSAGES */}
           <div className="px-6">
             {error && (
-              <div className="mt-5 flex items-start gap-2 p-3 bg-red-900/40 border border-red-700 text-red-300 rounded-lg text-sm">
+              <div className="mt-5 flex items-start gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="mt-5 p-3 bg-green-900/40 border border-green-700 text-green-300 rounded-lg text-sm">
+              <div className="mt-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
                 {success}
               </div>
             )}
           </div>
 
           {!editing ? (
-            <div className="p-6">
-              {/* PROFILE INFO */}
-              <div className="space-y-4 text-gray-300">
-                <div className="flex items-center gap-3">
-                  <Ruler className="w-5 h-5 text-blue-400" />
-                  <span>
-                    Height:{" "}
-                    <strong className="text-white">
-                      {profile.height || "-"} cm
-                    </strong>
-                  </span>
+
+            <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
+
+              {/* LEFT SIDE */}
+              <div className="p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-green-100">
+
+                {/* Profile */}
+                <div className="text-center">
+                  <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                    <User className="w-12 h-12 text-green-600" />
+                  </div>
+
+                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                    {user.name || user.email?.split("@")[0]}
+                  </h1>
+
+                  <p className="text-gray-500 mt-1">
+                    {user.email}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Scale className="w-5 h-5 text-blue-400" />
-                  <span>
-                    Weight:{" "}
-                    <strong className="text-white">
-                      {profile.weight || "-"} kg
-                    </strong>
-                  </span>
-                </div>
+                <div className="my-7 border-t border-green-100" />
 
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-blue-400" />
-                  <span>
-                    Age:{" "}
-                    <strong className="text-white">
-                      {profile.age || "-"}
-                    </strong>
-                  </span>
-                </div>
+                {/* Calorie Goal */}
+                {profile.calorieGoal && (
+                  <div className="p-5 rounded-2xl bg-green-50 border border-green-200 text-center">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                      <Activity className="w-6 h-6 text-green-600" />
+                    </div>
 
-                <div className="flex items-center gap-3">
-                  <Activity className="w-5 h-5 text-blue-400" />
-                  <span>
-                    Lifestyle:{" "}
-                    <strong className="text-white">
-                      {profile.lifestyle || "-"}
-                    </strong>
-                  </span>
-                </div>
+                    <p className="text-green-700 font-semibold">
+                      Estimated daily calorie goal
+                    </p>
 
-                <div className="flex items-start gap-3">
-                  <Target className="w-5 h-5 text-blue-400 mt-0.5" />
-                  <span>
-                    Goals:{" "}
-                    <strong className="text-white">
-                      {(
-                        profile.healthGoals ||
-                        []
-                      ).join(", ") || "-"}
-                    </strong>
-                  </span>
-                </div>
+                    <p className="text-3xl font-bold text-slate-900 mt-2">
+                      {profile.calorieGoalOverride || profile.calorieGoal} kcal
+                    </p>
 
-                <div className="flex items-center gap-3">
-                  <Apple className="w-5 h-5 text-blue-400" />
-                  <span>
-                    Diet:{" "}
-                    <strong className="text-white">
-                      {profile.dietaryPreferences ||
-                        "-"}
-                    </strong>
-                  </span>
-                </div>
+                    <p className="text-xs text-green-600 mt-2">
+                      This is an estimate based on your profile, not medical advice.
+                    </p>
+                  </div>
+                )}
 
-                <div className="flex items-start gap-3">
-                  <ShieldAlert className="w-5 h-5 text-blue-400 mt-0.5" />
-                  <span>
-                    Allergies:{" "}
-                    <strong className="text-white">
-                      {(
-                        profile.allergies || []
-                      ).join(", ") || "None"}
-                    </strong>
-                  </span>
+                {/* Actions */}
+                <div className="mt-6 space-y-3">
+
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg"
+                  >
+                    Edit Profile
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={redoQuestionnaire}
+                    className="w-full bg-white hover:bg-green-50 border border-green-300 text-green-700 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    Redo Questionnaire
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3.5 rounded-xl transition-colors"
+                  >
+                    Logout
+                  </button>
+
                 </div>
               </div>
 
-              {/* CALORIE GOAL */}
-              {profile.calorieGoal && (
-                <div className="mt-6 p-4 bg-green-900/30 border border-green-700 rounded-xl">
-                  <p className="text-green-300 font-semibold">
-                    Estimated daily calorie goal
-                  </p>
+              {/* RIGHT SIDE */}
+              <div className="p-6 sm:p-8">
 
-                  <p className="text-2xl font-bold text-white mt-1">
-                    {profile.calorieGoalOverride ||
-                      profile.calorieGoal}{" "}
-                    kcal
-                  </p>
+                <h2 className="text-xl font-bold text-slate-900 mb-5">
+                  Your Profile
+                </h2>
 
-                  <p className="text-xs text-green-400/70 mt-2">
-                    This is an estimate based on
-                    your profile, not medical advice.
-                  </p>
+                <div className="space-y-0">
+
+                  {/* Height */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Ruler className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Height:{" "}
+                      <strong className="text-slate-900">
+                        {profile.height || "-"} cm
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Weight */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Scale className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Weight:{" "}
+                      <strong className="text-slate-900">
+                        {profile.weight || "-"} kg
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Age */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Age:{" "}
+                      <strong className="text-slate-900">
+                        {profile.age || "-"}
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Lifestyle */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Activity className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Lifestyle:{" "}
+                      <strong className="text-slate-900">
+                        {profile.lifestyle || "-"}
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Goals */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Target className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Goals:{" "}
+                      <strong className="text-slate-900">
+                        {profile.healthGoals?.join(", ") || "-"}
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Diet */}
+                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Apple className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Diet:{" "}
+                      <strong className="text-slate-900">
+                        {profile.dietaryPreferences || "-"}
+                      </strong>
+                    </p>
+                  </div>
+
+                  {/* Allergies */}
+                  <div className="flex items-center gap-4 py-4">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <ShieldAlert className="w-6 h-6 text-green-600" />
+                    </div>
+
+                    <p className="text-gray-600">
+                      Allergies:{" "}
+                      <strong className="text-slate-900">
+                        {profile.allergies?.length
+                          ? profile.allergies.join(", ")
+                          : "None"}
+                      </strong>
+                    </p>
+                  </div>
+
                 </div>
-              )}
-
-              {/* ACTIONS */}
-              <div className="mt-6 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError("");
-                    setSuccess("");
-                    setEditing(true);
-                  }}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors"
-                >
-                  Edit Profile
-                </button>
-
-                <button
-                  type="button"
-                  onClick={redoQuestionnaire}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Redo Questionnaire
-                </button>
               </div>
+
             </div>
           ) : (
-            <div className="p-6 space-y-5">
-              {/* NAME */}
+              <div className = "p-6 space-y-5">
+              {/* NAME */ }
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Full Name
-                </label>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Full Name
+            </label>
 
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                />
-              </div>
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+            />
+          </div>
 
-              {/* BASIC INFO */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    Age
-                  </label>
+          {/* BASIC INFO */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">
+                Age
+              </label>
 
-                  <input
-                    type="number"
-                    min="1"
-                    max="120"
-                    name="age"
-                    value={form.age}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    Height (cm)
-                  </label>
-
-                  <input
-                    type="number"
-                    min="1"
-                    name="height"
-                    value={form.height}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    Weight (kg)
-                  </label>
-
-                  <input
-                    type="number"
-                    min="1"
-                    name="weight"
-                    value={form.weight}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                  />
-                </div>
-              </div>
-
-              {/* GENDER */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Gender
-                </label>
-
-                <select
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                >
-                  <option value="">
-                    Select gender
-                  </option>
-
-                  <option value="Male">
-                    Male
-                  </option>
-
-                  <option value="Female">
-                    Female
-                  </option>
-
-                  <option value="Other">
-                    Other
-                  </option>
-                </select>
-              </div>
-
-              {/* DIET */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Diet Preference
-                </label>
-
-                <select
-                  name="dietaryPreferences"
-                  value={
-                    form.dietaryPreferences
-                  }
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                >
-                  <option value="">
-                    Select one
-                  </option>
-
-                  {DIETARY_PREFERENCES.map(
-                    (diet) => (
-                      <option
-                        key={diet}
-                        value={diet}
-                      >
-                        {diet}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* LIFESTYLE */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Lifestyle
-                </label>
-
-                <select
-                  name="lifestyle"
-                  value={form.lifestyle}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white outline-none focus:border-green-400"
-                >
-                  <option value="">
-                    Select one
-                  </option>
-
-                  {LIFESTYLES.map(
-                    (lifestyle) => (
-                      <option
-                        key={lifestyle}
-                        value={lifestyle}
-                      >
-                        {lifestyle}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* ALLERGIES */}
-              <div>
-                <p className="text-sm font-semibold text-gray-300 mb-2">
-                  Allergies
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {ALLERGIES.map(
-                    (allergy) => {
-                      const selected =
-                        (
-                          form.allergies ||
-                          []
-                        ).includes(allergy);
-
-                      return (
-                        <button
-                          type="button"
-                          key={allergy}
-                          onClick={() =>
-                            toggleMulti(
-                              "allergies",
-                              allergy
-                            )
-                          }
-                          className={`px-3 py-2 rounded-full text-sm border transition-colors ${
-                            selected
-                              ? "bg-red-500 border-red-400 text-white"
-                              : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
-                          }`}
-                        >
-                          {allergy}
-                        </button>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-
-              {/* GOALS */}
-              <div>
-                <p className="text-sm font-semibold text-gray-300 mb-2">
-                  Health Goals
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {HEALTH_GOALS.map(
-                    (goal) => {
-                      const selected =
-                        (
-                          form.healthGoals ||
-                          []
-                        ).includes(goal);
-
-                      return (
-                        <button
-                          type="button"
-                          key={goal}
-                          onClick={() =>
-                            toggleMulti(
-                              "healthGoals",
-                              goal
-                            )
-                          }
-                          className={`px-3 py-2 rounded-full text-sm border transition-colors ${
-                            selected
-                              ? "bg-green-500 border-green-400 text-white"
-                              : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
-                          }`}
-                        >
-                          {goal}
-                        </button>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-
-              {/* SAVE/CANCEL */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={saving}
-                  className="flex-1 bg-green-500 hover:bg-green-600 py-3 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 font-semibold"
-                >
-                  {saving && (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  )}
-
-                  {saving
-                    ? "Saving..."
-                    : "Save Changes"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={cancelEditing}
-                  disabled={saving}
-                  className="flex-1 bg-gray-600 hover:bg-gray-500 py-3 rounded-lg disabled:opacity-50 font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                name="age"
+                value={form.age}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              />
             </div>
-          )}
 
-          {/* LOGOUT */}
-          <div className="px-6 pb-6">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">
+                Height (cm)
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                name="height"
+                value={form.height}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">
+                Weight (kg)
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                name="weight"
+                value={form.weight}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              />
+            </div>
+          </div>
+
+          {/* GENDER */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Gender
+            </label>
+
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+            >
+              <option value="">
+                Select gender
+              </option>
+
+              <option value="Male">
+                Male
+              </option>
+
+              <option value="Female">
+                Female
+              </option>
+
+              <option value="Other">
+                Other
+              </option>
+            </select>
+          </div>
+
+          {/* DIET */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Diet Preference
+            </label>
+
+            <select
+              name="dietaryPreferences"
+              value={
+                form.dietaryPreferences
+              }
+              onChange={handleChange}
+              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+            >
+              <option value="">
+                Select one
+              </option>
+
+              {DIETARY_PREFERENCES.map(
+                (diet) => (
+                  <option
+                    key={diet}
+                    value={diet}
+                  >
+                    {diet}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {/* LIFESTYLE */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Lifestyle
+            </label>
+
+            <select
+              name="lifestyle"
+              value={form.lifestyle}
+              onChange={handleChange}
+              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+            >
+              <option value="">
+                Select one
+              </option>
+
+              {LIFESTYLES.map(
+                (lifestyle) => (
+                  <option
+                    key={lifestyle}
+                    value={lifestyle}
+                  >
+                    {lifestyle}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {/* ALLERGIES */}
+          <div>
+            <p className="text-sm font-semibold text-gray-300 mb-2">
+              Allergies
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {ALLERGIES.map(
+                (allergy) => {
+                  const selected =
+                    (
+                      form.allergies ||
+                      []
+                    ).includes(allergy);
+
+                  return (
+                    <button
+                      type="button"
+                      key={allergy}
+                      onClick={() =>
+                        toggleMulti(
+                          "allergies",
+                          allergy
+                        )
+                      }
+                      className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
+                          ? "bg-red-500 border-red-400 text-slate-900"
+                          : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
+                        }`}
+                    >
+                      {allergy}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          </div>
+
+          {/* GOALS */}
+          <div>
+            <p className="text-sm font-semibold text-gray-300 mb-2">
+              Health Goals
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {HEALTH_GOALS.map(
+                (goal) => {
+                  const selected =
+                    (
+                      form.healthGoals ||
+                      []
+                    ).includes(goal);
+
+                  return (
+                    <button
+                      type="button"
+                      key={goal}
+                      onClick={() =>
+                        toggleMulti(
+                          "healthGoals",
+                          goal
+                        )
+                      }
+                      className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
+                          ? "bg-green-500 border-green-400 text-slate-900"
+                          : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
+                        }`}
+                    >
+                      {goal}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          </div>
+
+          {/* SAVE/CANCEL */}
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={handleLogout}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors"
+              onClick={handleSubmit}
+              disabled={saving}
+              className="flex-1 bg-green-600 hover:bg-green-700 py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 font-semibold shadow-md"
             >
-              Logout
+              {saving && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+
+              {saving
+                ? "Saving..."
+                : "Save Changes"}
+            </button>
+
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={saving}
+              className="flex-1 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl disabled:opacity-50 font-semibold"
+            >
+              Cancel
             </button>
           </div>
         </div>
+          )}
+
+        
       </div>
     </div>
+    </div >
   );
 }
