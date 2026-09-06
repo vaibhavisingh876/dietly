@@ -54,7 +54,7 @@ export function isAuthenticated() {
   return Boolean(getToken());
 }
 
-export function logout({ redirect = true } = {}) {
+export function logout() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 
@@ -63,7 +63,5 @@ export function logout({ redirect = true } = {}) {
 
   window.dispatchEvent(new Event("authChanged"));
 
-  if (redirect) {
-    window.location.href = "/login";
-  }
+  
 }

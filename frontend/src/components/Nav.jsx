@@ -154,6 +154,7 @@ export default function Nav() {
   const handleLogout = () => {
     setIsMobileMenuOpen(false);
     logout();
+    navigate("/login");
   };
 
   const visibleLinks = isLoggedIn

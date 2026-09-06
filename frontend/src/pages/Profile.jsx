@@ -140,7 +140,8 @@ export default function Profile() {
   }, []);
 
   const handleLogout = () => {
-    clearAuth();
+  clearAuth();
+  navigate("/login");
   };
 
   const handleChange = (e) => {

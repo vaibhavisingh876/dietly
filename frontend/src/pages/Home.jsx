@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Leaf,
   Apple,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const navigate = useNavigate();
+
   const features = [
     {
       icon: <Apple className="w-8 h-8" />,
@@ -64,11 +67,11 @@ export default function Home() {
       sessionStorage.getItem("token");
 
     if (token) {
-      window.location.href = "/analyze";
+      navigate("/analyze");
       return;
     }
 
-    window.location.href = "/register";
+    navigate("/register");
   };
 
   return (
