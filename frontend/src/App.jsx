@@ -23,7 +23,7 @@ function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-cream-100">
       {!hideNavbar && <Nav />}
 
       <Routes>
@@ -54,17 +54,17 @@ function AppLayout() {
           element={
             <div className="min-h-[70vh] flex items-center justify-center px-4">
               <div className="text-center">
-                <h1 className="text-5xl font-bold text-slate-900">
+                <h1 className="font-display text-6xl font-semibold text-forest-700">
                   404
                 </h1>
 
-                <p className="mt-3 text-slate-600">
+                <p className="mt-3 text-ink-500">
                   The page you're looking for doesn't exist.
                 </p>
 
                 <a
                   href="/"
-                  className="inline-block mt-6 px-5 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+                  className="inline-block mt-6 px-5 py-3 rounded-lg bg-clay-500 text-white font-medium hover:bg-clay-600 transition-colors"
                 >
                   Go Home
                 </a>

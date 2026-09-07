@@ -7,8 +7,8 @@ import api from "../api/api";
 // INTRO
 // --------------------------------------------------
 const QuizIntro = ({ onNext }) => (
-  <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-3xl shadow-xl max-w-md w-full overflow-hidden">
+  <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+    <div className="bg-cream-50 rounded-2xl shadow-sm max-w-md w-full overflow-hidden">
       <div className="relative h-64">
         <img
           src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop"
@@ -16,19 +16,19 @@ const QuizIntro = ({ onNext }) => (
           className="w-full h-full object-cover"
         />
 
-        <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded-full shadow-md">
-          <span className="text-emerald-600 font-bold text-lg">
+        <div className="absolute top-4 left-4 bg-cream-50 px-4 py-2 rounded-full shadow-md">
+          <span className="text-forest-600 font-bold text-lg">
             Dietly
           </span>
         </div>
       </div>
 
       <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-3">
+        <h1 className="font-display text-3xl font-semibold text-ink-800 mb-3">
           Bite into Your Perfect Meal
         </h1>
 
-        <p className="text-gray-600 mb-8">
+        <p className="text-ink-600 mb-8">
           A few quick questions so Dietly can personalize your
           calorie goal, meal feedback, and recipes.
         </p>
@@ -36,7 +36,7 @@ const QuizIntro = ({ onNext }) => (
         <button
           type="button"
           onClick={onNext}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-full transition-colors shadow-lg"
+          className="w-full bg-forest-600 hover:bg-forest-700 text-white font-semibold py-4 rounded-full transition-colors shadow-lg"
         >
           Start Now →
         </button>
@@ -68,40 +68,40 @@ const SingleSelectQuestion = ({
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
+    <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+      <div className="bg-cream-50 rounded-2xl shadow-sm max-w-md w-full p-8">
         <div className="mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-forest-100 rounded-full flex items-center justify-center">
               <span className="text-3xl">{question.icon}</span>
             </div>
           </div>
 
           <div className="text-center mb-2">
-            <span className="text-emerald-600 font-semibold text-sm tracking-wide">
+            <span className="text-forest-600 font-semibold text-sm tracking-wide">
               QUESTIONNAIRE
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+          <div className="flex items-center justify-between text-xs text-ink-500 mb-2">
             <span>
               Question {currentStep + 1} of {totalSteps}
             </span>
             <span>{Math.round(progress)}% Complete</span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div className="w-full bg-cream-300 rounded-full h-2 mb-6">
             <div
-              className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+              className="bg-forest-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="font-display text-2xl font-semibold text-ink-800 mb-2">
             {question.title}
           </h2>
 
-          <p className="text-gray-600 text-sm">
+          <p className="text-ink-600 text-sm">
             {question.subtitle}
           </p>
         </div>
@@ -114,12 +114,12 @@ const SingleSelectQuestion = ({
               onClick={() => setSelected(index)}
               className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${
                 selected === index
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-gray-200 hover:border-emerald-200"
+                  ? "border-forest-500 bg-forest-50"
+                  : "border-cream-300 hover:border-forest-200"
               }`}
             >
               <span className="text-2xl">{option.icon}</span>
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-ink-700">
                 {option.label}
               </span>
             </button>
@@ -131,7 +131,7 @@ const SingleSelectQuestion = ({
             <button
               type="button"
               onClick={onPrev}
-              className="flex-1 border-2 border-emerald-500 text-emerald-600 font-semibold py-3 rounded-full hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 border-2 border-forest-500 text-forest-600 font-semibold py-3 rounded-full hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
             >
               <ChevronLeft size={20} />
               PREV
@@ -144,8 +144,8 @@ const SingleSelectQuestion = ({
             disabled={selected === null}
             className={`flex-1 font-semibold py-3 rounded-full transition-colors flex items-center justify-center gap-2 ${
               selected === null
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                ? "bg-ink-400 text-ink-500 cursor-not-allowed"
+                : "bg-forest-600 hover:bg-forest-700 text-white"
             }`}
           >
             {isLast ? "FINISH" : "NEXT"}
@@ -195,40 +195,40 @@ const MultiSelectQuestion = ({
   const isInvalid = required && touched && selected.length === 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
+    <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+      <div className="bg-cream-50 rounded-2xl shadow-sm max-w-md w-full p-8">
         <div className="mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-forest-100 rounded-full flex items-center justify-center">
               <span className="text-3xl">{question.icon}</span>
             </div>
           </div>
 
           <div className="text-center mb-2">
-            <span className="text-emerald-600 font-semibold text-sm tracking-wide">
+            <span className="text-forest-600 font-semibold text-sm tracking-wide">
               QUESTIONNAIRE
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+          <div className="flex items-center justify-between text-xs text-ink-500 mb-2">
             <span>
               Question {currentStep + 1} of {totalSteps}
             </span>
             <span>{Math.round(progress)}% Complete</span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div className="w-full bg-cream-300 rounded-full h-2 mb-6">
             <div
-              className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+              className="bg-forest-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="font-display text-2xl font-semibold text-ink-800 mb-2">
             {question.title}
           </h2>
 
-          <p className="text-gray-600 text-sm">
+          <p className="text-ink-600 text-sm">
             {question.subtitle}
           </p>
         </div>
@@ -241,12 +241,12 @@ const MultiSelectQuestion = ({
               onClick={() => toggle(index)}
               className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${
                 selected.includes(index)
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-gray-200 hover:border-emerald-200"
+                  ? "border-forest-500 bg-forest-50"
+                  : "border-cream-300 hover:border-forest-200"
               }`}
             >
               <span className="text-2xl">{option.icon}</span>
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-ink-700">
                 {option.label}
               </span>
             </button>
@@ -256,7 +256,7 @@ const MultiSelectQuestion = ({
         {required && (
           <p
             className={`text-xs mb-5 ${
-              isInvalid ? "text-red-500" : "text-gray-500"
+              isInvalid ? "text-red-500" : "text-ink-500"
             }`}
           >
             Select at least one option.
@@ -268,7 +268,7 @@ const MultiSelectQuestion = ({
             <button
               type="button"
               onClick={onPrev}
-              className="flex-1 border-2 border-emerald-500 text-emerald-600 font-semibold py-3 rounded-full hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 border-2 border-forest-500 text-forest-600 font-semibold py-3 rounded-full hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
             >
               <ChevronLeft size={20} />
               PREV
@@ -281,8 +281,8 @@ const MultiSelectQuestion = ({
             disabled={required && selected.length === 0}
             className={`flex-1 font-semibold py-3 rounded-full transition-colors flex items-center justify-center gap-2 ${
               required && selected.length === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                ? "bg-ink-400 text-ink-500 cursor-not-allowed"
+                : "bg-forest-600 hover:bg-forest-700 text-white"
             }`}
           >
             NEXT
@@ -333,40 +333,40 @@ const BasicInfoQuestion = ({
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
+    <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+      <div className="bg-cream-50 rounded-2xl shadow-sm max-w-md w-full p-8">
         <div className="mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-forest-100 rounded-full flex items-center justify-center">
               <span className="text-3xl">📋</span>
             </div>
           </div>
 
           <div className="text-center mb-2">
-            <span className="text-emerald-600 font-semibold text-sm tracking-wide">
+            <span className="text-forest-600 font-semibold text-sm tracking-wide">
               QUESTIONNAIRE
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+          <div className="flex items-center justify-between text-xs text-ink-500 mb-2">
             <span>
               Question {currentStep + 1} of {totalSteps}
             </span>
             <span>{Math.round(progress)}% Complete</span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div className="w-full bg-cream-300 rounded-full h-2 mb-6">
             <div
-              className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+              className="bg-forest-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="font-display text-2xl font-semibold text-ink-800 mb-2">
             Tell us about you
           </h2>
 
-          <p className="text-gray-600 text-sm">
+          <p className="text-ink-600 text-sm">
             This helps us estimate a sensible daily calorie goal.
           </p>
         </div>
@@ -385,7 +385,7 @@ const BasicInfoQuestion = ({
                   age: e.target.value,
                 })
               }
-              className="p-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 outline-none"
+              className="p-3 rounded-xl border-2 border-cream-300 focus:border-forest-400 outline-none"
             />
 
             <input
@@ -399,7 +399,7 @@ const BasicInfoQuestion = ({
                   height: e.target.value,
                 })
               }
-              className="p-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 outline-none"
+              className="p-3 rounded-xl border-2 border-cream-300 focus:border-forest-400 outline-none"
             />
 
             <input
@@ -413,7 +413,7 @@ const BasicInfoQuestion = ({
                   weight: e.target.value,
                 })
               }
-              className="p-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 outline-none"
+              className="p-3 rounded-xl border-2 border-cream-300 focus:border-forest-400 outline-none"
             />
           </div>
 
@@ -425,7 +425,7 @@ const BasicInfoQuestion = ({
                 gender: e.target.value,
               })
             }
-            className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-emerald-400 outline-none bg-white"
+            className="w-full p-3 rounded-xl border-2 border-cream-300 focus:border-forest-400 outline-none bg-cream-50"
           >
             <option value="">Select gender</option>
             <option value="Male">Male</option>
@@ -445,7 +445,7 @@ const BasicInfoQuestion = ({
             <button
               type="button"
               onClick={onPrev}
-              className="flex-1 border-2 border-emerald-500 text-emerald-600 font-semibold py-3 rounded-full hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 border-2 border-forest-500 text-forest-600 font-semibold py-3 rounded-full hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
             >
               <ChevronLeft size={20} />
               PREV
@@ -455,7 +455,7 @@ const BasicInfoQuestion = ({
           <button
             type="button"
             onClick={handleNext}
-            className="flex-1 font-semibold py-3 rounded-full transition-colors flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="flex-1 font-semibold py-3 rounded-full transition-colors flex items-center justify-center gap-2 bg-forest-600 hover:bg-forest-700 text-white"
           >
             NEXT
             <ChevronRight size={20} />
@@ -476,40 +476,40 @@ const Results = ({
   onGoToApp,
   onRetry,
 }) => (
-  <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-lime-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
+  <div className="min-h-screen bg-cream-100 flex items-center justify-center p-4">
+    <div className="bg-cream-50 rounded-2xl shadow-sm max-w-md w-full p-8">
       <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-20 h-20 bg-forest-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-4xl">
             {saveError ? "⚠️" : "🎉"}
           </span>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-3">
+        <h1 className="font-display text-3xl font-semibold text-ink-800 mb-3">
           {saveError
             ? "We couldn't save your profile"
             : "Your Profile is Set Up"}
         </h1>
 
-        <p className="text-gray-600">
+        <p className="text-ink-600">
           {saveError
             ? "Your answers are still here. Retry saving them before continuing."
             : "We've saved your preferences and will use them to personalize your meal analysis, calorie goal, and recipes."}
         </p>
       </div>
 
-      <div className="bg-emerald-50 rounded-2xl p-6 mb-6">
-        <h3 className="font-semibold text-gray-800 mb-3">
+      <div className="bg-forest-50 rounded-2xl p-6 mb-6">
+        <h3 className="font-semibold text-ink-800 mb-3">
           Your Preferences:
         </h3>
 
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-ink-600">
           {summaryLines.map((line, index) => (
             <div
               key={index}
               className="flex items-start gap-2"
             >
-              <span className="text-emerald-600">✓</span>
+              <span className="text-forest-600">✓</span>
               <span>{line}</span>
             </div>
           ))}
@@ -527,7 +527,7 @@ const Results = ({
           type="button"
           onClick={onRetry}
           disabled={saving}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-forest-600 hover:bg-forest-700 text-white font-semibold py-4 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saving && (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -539,7 +539,7 @@ const Results = ({
           type="button"
           onClick={onGoToApp}
           disabled={saving}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-forest-600 hover:bg-forest-700 text-white font-semibold py-4 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saving && (
             <Loader2 className="w-5 h-5 animate-spin" />

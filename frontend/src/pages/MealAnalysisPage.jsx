@@ -23,13 +23,13 @@ import {
 
 const FEEDBACK_STYLES = {
   positive:
-    "text-green-700 bg-green-50 border-green-200",
+    "text-forest-700 bg-forest-50 border-forest-200",
 
   warning:
     "text-amber-700 bg-amber-50 border-amber-200",
 
   neutral:
-    "text-gray-700 bg-gray-50 border-gray-200",
+    "text-ink-700 bg-cream-100 border-cream-300",
 };
 
 function formatDate(dateStr) {
@@ -83,12 +83,12 @@ function MealDetail({
   onBack,
 }) {
   return (
-    <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 sm:p-8">
+    <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 sm:p-8">
       {/* BACK */}
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="flex items-center gap-1 text-sm text-ink-500 hover:text-ink-700 mb-6"
       >
         <ChevronLeft className="w-4 h-4" />
 
@@ -98,11 +98,11 @@ function MealDetail({
       {/* HEADER */}
       <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
             {meal.name}
           </h2>
 
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-ink-500 mt-1">
             {formatDate(meal.date)}
 
             {meal.mealType
@@ -114,8 +114,8 @@ function MealDetail({
         <span
           className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full ${
             meal.aiGenerated
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-blue-100 text-blue-700"
+              ? "bg-forest-100 text-forest-700"
+              : "bg-clay-100 text-clay-700"
           }`}
         >
           {meal.aiGenerated ? (
@@ -132,7 +132,7 @@ function MealDetail({
 
       {/* SUMMARY */}
       {meal.summary && (
-        <div className="text-gray-700 italic bg-green-50 border border-green-100 rounded-xl p-4 mb-6">
+        <div className="text-ink-700 italic bg-forest-50 border border-forest-100 rounded-xl p-4 mb-6">
           "{meal.summary}"
         </div>
       )}
@@ -169,17 +169,17 @@ function MealDetail({
           ([label, value, unit]) => (
             <div
               key={label}
-              className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100"
+              className="bg-cream-100 rounded-xl p-3 text-center border border-cream-200"
             >
-              <p className="text-lg font-bold text-gray-800">
+              <p className="text-lg font-bold text-ink-800">
                 {value ?? 0}
 
-                <span className="text-xs font-normal text-gray-500 ml-1">
+                <span className="text-xs font-normal text-ink-500 ml-1">
                   {unit}
                 </span>
               </p>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-500">
                 {label}
               </p>
             </div>
@@ -193,7 +193,7 @@ function MealDetail({
       ) &&
         meal.feedback.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-semibold text-gray-800">
+            <h3 className="font-semibold text-ink-800">
               Personalized Feedback
             </h3>
 
@@ -221,7 +221,7 @@ function MealDetail({
 
       {/* ORIGINAL INPUT */}
       {meal.mealText && (
-        <div className="mt-6 text-sm text-gray-500 border-t pt-5">
+        <div className="mt-6 text-sm text-ink-500 border-t pt-5">
           <span className="font-semibold">
             Original entry:{" "}
           </span>
@@ -232,7 +232,7 @@ function MealDetail({
 
       {/* DISCLAIMER */}
       {meal.aiGenerated && (
-        <p className="mt-6 text-xs text-gray-400">
+        <p className="mt-6 text-xs text-ink-400">
           AI-generated nutrition values are
           estimates and may not be exact.
         </p>
@@ -361,15 +361,15 @@ export default function MealAnalysisPage() {
     groupByDate(meals);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen dietly-page-bg pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {/* HEADER */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="font-display text-3xl font-semibold text-ink-900">
             Meal History
           </h1>
 
-          <p className="text-gray-500 mt-2">
+          <p className="text-ink-500 mt-2">
             Meals you've analyzed or logged,
             saved to your account.
           </p>
@@ -402,7 +402,7 @@ export default function MealAnalysisPage() {
         {id ? (
           detailLoading ? (
             <div className="flex justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-forest-600" />
             </div>
           ) : selectedMeal ? (
             <MealDetail
@@ -413,8 +413,8 @@ export default function MealAnalysisPage() {
             />
           ) : (
             !error && (
-              <div className="text-center py-16 bg-white rounded-3xl">
-                <p className="text-gray-500">
+              <div className="text-center py-16 bg-cream-50 rounded-2xl">
+                <p className="text-ink-500">
                   Meal not found.
                 </p>
 
@@ -423,7 +423,7 @@ export default function MealAnalysisPage() {
                   onClick={() =>
                     navigate("/history")
                   }
-                  className="mt-4 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="mt-4 px-5 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700"
                 >
                   Back to History
                 </button>
@@ -433,18 +433,18 @@ export default function MealAnalysisPage() {
         ) : loading ? (
           /* HISTORY LOADING */
           <div className="flex justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-forest-600" />
           </div>
         ) : meals.length === 0 ? (
           /* EMPTY HISTORY */
-          <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-300">
-            <Flame className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <div className="text-center py-16 bg-cream-50 rounded-2xl border border-dashed border-ink-400">
+            <Flame className="w-10 h-10 text-ink-400 mx-auto mb-3" />
 
-            <p className="text-gray-500">
+            <p className="text-ink-500">
               No meals logged yet.
             </p>
 
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-ink-400 text-sm mt-1">
               Head to the Analyze page to
               log your first meal.
             </p>
@@ -454,7 +454,7 @@ export default function MealAnalysisPage() {
               onClick={() =>
                 navigate("/analyze")
               }
-              className="mt-5 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold"
+              className="mt-5 px-5 py-2.5 bg-forest-600 hover:bg-forest-700 text-white rounded-lg font-semibold"
             >
               Analyze a Meal
             </button>
@@ -465,7 +465,7 @@ export default function MealAnalysisPage() {
             {grouped.map(
               ([date, dayMeals]) => (
                 <div key={date}>
-                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
                     {formatDate(date)}
                   </h2>
 
@@ -480,14 +480,14 @@ export default function MealAnalysisPage() {
                               `/history/${meal._id}`
                             )
                           }
-                          className="w-full text-left bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center justify-between gap-4 hover:border-green-300 hover:shadow-md transition-all"
+                          className="w-full text-left bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5 flex items-center justify-between gap-4 hover:border-forest-300 hover:shadow-md transition-all"
                         >
                           <div className="min-w-0">
-                            <p className="font-semibold text-gray-800 truncate">
+                            <p className="font-semibold text-ink-800 truncate">
                               {meal.name}
                             </p>
 
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-ink-500 mt-1">
                               {meal.calories ||
                                 0}{" "}
                               kcal • Protein{" "}
@@ -497,7 +497,7 @@ export default function MealAnalysisPage() {
                             </p>
 
                             {meal.mealType && (
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-xs text-ink-400 mt-1">
                                 {
                                   meal.mealType
                                 }
@@ -508,8 +508,8 @@ export default function MealAnalysisPage() {
                           <span
                             className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0 ${
                               meal.aiGenerated
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-blue-100 text-blue-700"
+                                ? "bg-forest-100 text-forest-700"
+                                : "bg-clay-100 text-clay-700"
                             }`}
                           >
                             {meal.aiGenerated ? (

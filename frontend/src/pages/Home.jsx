@@ -75,42 +75,49 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="w-full min-h-screen bg-cream-100">
       {/* Hero */}
-      <section className="min-h-screen flex items-center justify-center text-center bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 px-6 pt-24">
-        <div className="max-w-4xl">
-          <div className="inline-flex items-center justify-center bg-white p-5 rounded-3xl shadow-lg mb-8">
-            <Leaf className="w-16 h-16 text-green-600" />
+      <section className="min-h-screen flex items-center justify-center text-center bg-forest-700 px-6 pt-24 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, #FAF7F2 1.5px, transparent 0)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        <div className="max-w-3xl relative">
+          <div className="inline-flex items-center justify-center bg-forest-600/60 border border-forest-500 p-4 rounded-2xl mb-8">
+            <Leaf className="w-10 h-10 text-clay-300" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-            Welcome to{" "}
-            <span className="text-green-600">Dietly</span>
+          <h1 className="font-display text-5xl md:text-7xl font-semibold text-cream-50 mb-6 leading-[1.05]">
+            Feed your ambition,
+            <br />
+            not just your appetite.
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-700 font-medium mb-6">
-            Feed Your Ambition, Not Just Your Appetite.
-          </p>
-
-          <p className="max-w-2xl mx-auto text-gray-600 text-lg leading-relaxed mb-10">
-            Your personal AI-powered meal companion to help you understand
-            what you eat, track your nutrition, and build healthier habits.
+          <p className="max-w-xl mx-auto text-forest-100 text-lg leading-relaxed mb-10">
+            Dietly is your personal AI meal companion — describe what you
+            ate, and understand your nutrition, your habits, and your
+            progress in one place.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               type="button"
               onClick={handleGetStarted}
-              className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-green-700 hover:shadow-xl transition-all"
+              className="inline-flex items-center justify-center gap-2 bg-clay-500 text-white px-7 py-3.5 rounded-lg font-medium hover:bg-clay-400 transition-colors"
             >
               Get Started
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
               type="button"
               onClick={() => scrollTo("features")}
-              className="border-2 border-green-600 text-green-700 px-8 py-4 rounded-xl font-semibold hover:bg-green-50 transition"
+              className="border border-forest-400 text-cream-100 px-7 py-3.5 rounded-lg font-medium hover:bg-forest-600 transition-colors"
             >
               Learn More
             </button>
@@ -121,31 +128,31 @@ export default function Home() {
       {/* About */}
       <section
         id="about"
-        className="py-24 bg-gray-50 px-6 md:px-8"
+        className="py-24 bg-cream-100 px-6 md:px-8"
       >
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div>
-            <p className="text-green-600 font-semibold uppercase tracking-wider mb-3">
-              Why Dietly?
+            <p className="text-clay-600 font-medium mb-3">
+              Why Dietly
             </p>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="font-display text-4xl md:text-5xl font-semibold text-forest-800 mb-6 leading-tight">
               Understand your food, not just your calories.
             </h2>
 
-            <p className="text-gray-700 leading-relaxed mb-5">
+            <p className="text-ink-600 leading-relaxed mb-5">
               Dietly turns a simple meal description into useful nutritional
               information using AI. Instead of manually searching for every
               ingredient, you can simply describe your meal and get an
               estimated nutritional breakdown.
             </p>
 
-            <p className="text-gray-700 leading-relaxed mb-5">
+            <p className="text-ink-600 leading-relaxed mb-5">
               Your profile, dietary preferences, allergies, health goals, and
               lifestyle can be used to make the feedback more relevant to you.
             </p>
 
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-ink-600 leading-relaxed">
               From meal analysis and calorie tracking to pantry-based recipe
               suggestions and meal history, Dietly brings your everyday
               nutrition workflow into one place.
@@ -153,50 +160,50 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="bg-white rounded-2xl shadow-lg p-7 border border-green-100">
-              <Sparkles className="w-10 h-10 text-green-600 mb-4" />
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+              <Sparkles className="w-8 h-8 text-clay-500 mb-4" />
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
                 AI Analysis
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 text-sm leading-relaxed">
                 Describe your meal and receive an estimated nutrition report.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-7 border border-green-100">
-              <BarChart3 className="w-10 h-10 text-green-600 mb-4" />
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+              <BarChart3 className="w-8 h-8 text-clay-500 mb-4" />
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
                 Track Progress
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 text-sm leading-relaxed">
                 Monitor calories, macros, streaks, and your meal history.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-7 border border-green-100">
-              <Utensils className="w-10 h-10 text-green-600 mb-4" />
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+              <Utensils className="w-8 h-8 text-clay-500 mb-4" />
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
                 Smart Pantry
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 text-sm leading-relaxed">
                 Use ingredients you already have to discover meal ideas.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-7 border border-green-100">
-              <Target className="w-10 h-10 text-green-600 mb-4" />
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+              <Target className="w-8 h-8 text-clay-500 mb-4" />
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
                 Personal Goals
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 text-sm leading-relaxed">
                 Keep nutrition tracking aligned with your health goals.
               </p>
             </div>
@@ -207,32 +214,32 @@ export default function Home() {
       {/* Features */}
       <section
         id="features"
-        className="py-24 bg-white px-6 md:px-8"
+        className="py-24 bg-cream-50 px-6 md:px-8 border-y border-cream-300"
       >
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-green-600 font-semibold uppercase tracking-wider mb-3">
+          <p className="text-clay-600 font-medium mb-3">
             Everything in one place
           </p>
 
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-12">
-            Powerful Features
+          <h2 className="font-display text-4xl md:text-5xl font-semibold text-forest-800 mb-12">
+            Powerful features
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="bg-gray-50 p-8 rounded-2xl border border-gray-200 hover:border-green-500 hover:shadow-xl transition-all duration-300"
+                className="bg-cream-100 p-8 rounded-xl border border-cream-300 text-left hover:border-forest-300 transition-colors duration-300"
               >
-                <div className="bg-green-100 text-green-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-5">
+                <div className="text-forest-600 mb-5">
                   {feature.icon}
                 </div>
 
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                <h3 className="font-display text-lg font-semibold mb-2 text-forest-800">
                   {feature.title}
                 </h3>
 
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-ink-500 text-sm leading-relaxed">
                   {feature.description}
                 </p>
               </div>
@@ -242,53 +249,53 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 bg-green-50 px-6 md:px-8">
+      <section className="py-24 bg-cream-100 px-6 md:px-8">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-12">
-            How Dietly Works
+          <h2 className="font-display text-4xl md:text-5xl font-semibold text-forest-800 mb-14">
+            How Dietly works
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5 text-xl font-bold">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
+            <div className="text-left md:text-center">
+              <div className="font-display w-11 h-11 rounded-full border-2 border-clay-500 text-clay-600 flex items-center justify-center mx-0 md:mx-auto mb-5 text-lg font-semibold">
                 1
               </div>
 
-              <h3 className="text-xl font-bold mb-3">
-                Build Your Profile
+              <h3 className="font-display text-lg font-semibold mb-2 text-forest-800">
+                Build your profile
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 leading-relaxed">
                 Tell Dietly about your dietary preferences, goals, allergies,
                 and lifestyle.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5 text-xl font-bold">
+            <div className="text-left md:text-center">
+              <div className="font-display w-11 h-11 rounded-full border-2 border-clay-500 text-clay-600 flex items-center justify-center mx-0 md:mx-auto mb-5 text-lg font-semibold">
                 2
               </div>
 
-              <h3 className="text-xl font-bold mb-3">
-                Log Your Meals
+              <h3 className="font-display text-lg font-semibold mb-2 text-forest-800">
+                Log your meals
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 leading-relaxed">
                 Describe what you ate and let AI estimate the nutritional
                 information.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto mb-5 text-xl font-bold">
+            <div className="text-left md:text-center">
+              <div className="font-display w-11 h-11 rounded-full border-2 border-clay-500 text-clay-600 flex items-center justify-center mx-0 md:mx-auto mb-5 text-lg font-semibold">
                 3
               </div>
 
-              <h3 className="text-xl font-bold mb-3">
-                Improve Consistently
+              <h3 className="font-display text-lg font-semibold mb-2 text-forest-800">
+                Improve consistently
               </h3>
 
-              <p className="text-gray-600">
+              <p className="text-ink-500 leading-relaxed">
                 Use your history, calories, macros, streaks, and feedback to
                 make better decisions.
               </p>
@@ -299,24 +306,24 @@ export default function Home() {
 
       
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12 px-6 md:px-8">
+      <footer className="bg-forest-800 text-forest-200 py-12 px-6 md:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <Leaf className="w-7 h-7 text-green-500" />
+            <div className="flex items-center gap-2 mb-4">
+              <Leaf className="w-6 h-6 text-clay-400" />
 
-              <span className="text-2xl font-bold text-white">
+              <span className="font-display text-xl font-semibold text-cream-50">
                 Dietly
               </span>
             </div>
 
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Feed Your Ambition, Not Just Your Appetite.
+            <p className="text-forest-300 text-sm leading-relaxed">
+              Feed your ambition, not just your appetite.
             </p>
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-white mb-4">
+            <h4 className="font-medium text-cream-50 mb-4">
               Product
             </h4>
 
@@ -324,7 +331,7 @@ export default function Home() {
               <li>
                 <button
                   onClick={() => scrollTo("features")}
-                  className="hover:text-white transition"
+                  className="hover:text-cream-50 transition-colors"
                 >
                   Features
                 </button>
@@ -333,7 +340,7 @@ export default function Home() {
               <li>
                 <button
                   onClick={handleGetStarted}
-                  className="hover:text-white transition"
+                  className="hover:text-cream-50 transition-colors"
                 >
                   Get Started
                 </button>
@@ -342,7 +349,7 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-white mb-4">
+            <h4 className="font-medium text-cream-50 mb-4">
               Company
             </h4>
 
@@ -350,7 +357,7 @@ export default function Home() {
               <li>
                 <button
                   onClick={() => scrollTo("about")}
-                  className="hover:text-white transition"
+                  className="hover:text-cream-50 transition-colors"
                 >
                   About Us
                 </button>
@@ -359,7 +366,7 @@ export default function Home() {
               <li>
                 <button
                   onClick={() => scrollTo("features")}
-                  className="hover:text-white transition"
+                  className="hover:text-cream-50 transition-colors"
                 >
                   Our Features
                 </button>
@@ -368,17 +375,17 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-white mb-4">
+            <h4 className="font-medium text-cream-50 mb-4">
               Dietly
             </h4>
 
-            <p className="text-sm text-gray-400 leading-relaxed">
+            <p className="text-sm text-forest-300 leading-relaxed">
               AI-powered nutrition tracking with personalized insights.
             </p>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
+        <div className="border-t border-forest-700 pt-6 text-center text-sm text-forest-400">
           © 2026 Dietly. All rights reserved.
         </div>
       </footer>

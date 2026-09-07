@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Leaf } from "lucide-react";
 
 import api from "../api/api";
 import { saveAuth, getUser } from "../utils/auth";
@@ -108,32 +108,32 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
 
         {/* BRAND */}
         <div className="text-center mb-8">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-3xl font-bold text-green-700"
+            className="inline-flex items-center gap-2 font-display text-3xl font-semibold text-forest-700"
           >
-            <span className="text-4xl">🌿</span>
+            <Leaf className="w-7 h-7 text-clay-500" />
             Dietly
           </Link>
 
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-ink-600">
             Welcome back! Let's get you eating better.
           </p>
         </div>
 
         {/* CARD */}
-        <div className="bg-white rounded-3xl shadow-xl border border-green-100 p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm border border-forest-100 p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="font-display text-2xl font-semibold text-ink-900">
               Sign in
             </h1>
 
-            <p className="text-gray-500 mt-1">
+            <p className="text-ink-500 mt-1">
               Access your personalized nutrition dashboard.
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function Login() {
 
           {/* NOTICE */}
           {notice && (
-            <div className="mb-5 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+            <div className="mb-5 rounded-xl bg-forest-50 border border-forest-200 px-4 py-3 text-sm text-forest-700">
               {notice}
             </div>
           )}
@@ -158,13 +158,13 @@ export default function Login() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Email
               </label>
 
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="email"
@@ -174,7 +174,7 @@ export default function Login() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-4 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
               </div>
@@ -184,13 +184,13 @@ export default function Login() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Password
               </label>
 
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="password"
@@ -200,7 +200,7 @@ export default function Login() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-12 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-12 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
 
@@ -209,7 +209,7 @@ export default function Login() {
                   onClick={() =>
                     setShowPassword((prev) => !prev)
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -227,14 +227,14 @@ export default function Login() {
 
             {/* OPTIONS */}
             <div className="flex items-center justify-between gap-4 text-sm">
-              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+              <label className="flex items-center gap-2 text-ink-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) =>
                     setRememberMe(e.target.checked)
                   }
-                  className="w-4 h-4 accent-green-600"
+                  className="w-4 h-4 accent-forest-600"
                   disabled={loading}
                 />
 
@@ -244,7 +244,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="font-semibold text-green-700 hover:text-green-800"
+                className="font-semibold text-forest-700 hover:text-forest-800"
               >
                 Forgot password?
               </button>
@@ -254,7 +254,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-3.5 transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-forest-600 hover:bg-forest-700 disabled:bg-forest-300 text-white font-bold py-3.5 transition"
             >
               {loading ? (
                 "Signing in..."
@@ -268,11 +268,11 @@ export default function Login() {
           </form>
 
           {/* REGISTER */}
-          <p className="text-center text-sm text-gray-600 mt-7">
+          <p className="text-center text-sm text-ink-600 mt-7">
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="font-bold text-green-700 hover:text-green-800"
+              className="font-bold text-forest-700 hover:text-forest-800"
             >
               Create one
             </Link>

@@ -434,11 +434,11 @@ export default function Calories() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-green-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
+      <div className="min-h-screen bg-forest-50 flex items-center justify-center px-4">
+        <div className="bg-cream-50 rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-10 h-10 border-4 border-forest-200 border-t-forest-600 rounded-full animate-spin mx-auto mb-4" />
 
-          <p className="text-gray-600 font-medium">
+          <p className="text-ink-600 font-medium">
             Loading today's nutrition...
           </p>
         </div>
@@ -472,16 +472,16 @@ export default function Calories() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 px-4 sm:px-6 lg:px-8 pt-28 pb-10">
+    <div className="min-h-screen dietly-page-bg px-4 sm:px-6 lg:px-8 pt-28 pb-10">
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-extrabold text-gray-900">
+          <h1 className="text-4xl font-extrabold text-ink-900">
             Today's Calories
           </h1>
 
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-ink-600">
             Track your meals, calories and hydration.
           </p>
         </div>
@@ -494,41 +494,41 @@ export default function Calories() {
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4">
+          <div className="bg-forest-50 border border-forest-200 text-forest-700 rounded-xl p-4">
             {success}
           </div>
         )}
 
         {/* Summary */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
             <div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-ink-500">
                 Consumed
               </p>
 
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-ink-900">
                 {Math.round(total)} kcal
               </p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-ink-500">
                 Daily Goal
               </p>
 
-              <p className="text-3xl font-bold text-green-700">
+              <p className="text-3xl font-bold text-forest-700">
                 {Math.round(goal)} kcal
               </p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-ink-500">
                 Remaining
               </p>
 
-              <p className="text-3xl font-bold text-emerald-700">
+              <p className="text-3xl font-bold text-forest-700">
                 {Math.round(remaining)} kcal
               </p>
             </div>
@@ -536,18 +536,18 @@ export default function Calories() {
 
           <div className="mt-6">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-500">
+              <span className="text-ink-500">
                 Daily progress
               </span>
 
-              <span className="font-semibold text-gray-700">
+              <span className="font-semibold text-ink-700">
                 {Math.round(progress)}%
               </span>
             </div>
 
-            <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-4 bg-cream-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-green-600 rounded-full transition-all"
+                className="h-full bg-forest-600 rounded-full transition-all"
                 style={{
                   width: `${progress}%`,
                 }}
@@ -557,12 +557,12 @@ export default function Calories() {
         </div>
 
         {/* AI Meal Entry */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
             Add Meal with AI
           </h2>
 
-          <p className="text-gray-600 mt-2">
+          <p className="text-ink-600 mt-2">
             Describe what you ate and AI will estimate
             the calories and nutrition.
           </p>
@@ -571,7 +571,7 @@ export default function Calories() {
           <div className="mt-5">
             <label
               htmlFor="ai-meal-type"
-              className="block text-sm font-semibold text-gray-700 mb-2"
+              className="block text-sm font-semibold text-ink-700 mb-2"
             >
               Meal Type
             </label>
@@ -583,7 +583,7 @@ export default function Calories() {
                 setSelectedMealType(e.target.value)
               }
               disabled={aiLoading}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+              className="w-full p-3 border border-cream-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
             >
               {MEAL_TYPES.map(
                 ({ key, label }) => (
@@ -606,11 +606,11 @@ export default function Calories() {
             maxLength={1000}
             rows={4}
             placeholder="Example: 2 rotis, paneer curry and a bowl of curd"
-            className="w-full mt-5 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full mt-5 p-4 border border-cream-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-forest-500"
             disabled={aiLoading}
           />
 
-          <div className="flex justify-between items-center mt-2 text-sm text-gray-500">
+          <div className="flex justify-between items-center mt-2 text-sm text-ink-500">
             <span>
               AI values are estimates.
             </span>
@@ -623,7 +623,7 @@ export default function Calories() {
           <button
             onClick={addMealWithAI}
             disabled={aiLoading}
-            className="mt-5 w-full sm:w-auto px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold rounded-xl transition"
+            className="mt-5 w-full sm:w-auto px-6 py-3 bg-forest-600 hover:bg-forest-700 disabled:bg-ink-400 text-white font-bold rounded-xl transition"
           >
             {aiLoading
               ? "Analyzing..."
@@ -632,12 +632,12 @@ export default function Calories() {
         </div>
 
         {/* Manual Meals */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
             Manual Calorie Entry
           </h2>
 
-          <p className="text-gray-600 mt-2">
+          <p className="text-ink-600 mt-2">
             Set the calorie value for a meal manually.
           </p>
 
@@ -648,7 +648,7 @@ export default function Calories() {
                   key={key}
                   className="flex flex-col sm:flex-row gap-3 sm:items-center"
                 >
-                  <label className="sm:w-40 font-semibold text-gray-700">
+                  <label className="sm:w-40 font-semibold text-ink-700">
                     {label}
                   </label>
 
@@ -669,7 +669,7 @@ export default function Calories() {
                         })
                       )
                     }
-                    className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="flex-1 p-3 border border-cream-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest-500"
                     disabled={
                       manualLoading[key]
                     }
@@ -684,7 +684,7 @@ export default function Calories() {
                     disabled={
                       manualLoading[key]
                     }
-                    className="px-5 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold rounded-xl"
+                    className="px-5 py-3 bg-ink-900 hover:bg-ink-800 disabled:bg-ink-400 text-white font-semibold rounded-xl"
                   >
                     {manualLoading[key]
                       ? "Saving..."
@@ -697,12 +697,12 @@ export default function Calories() {
         </div>
 
         {/* Water */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-semibold text-ink-900">
             Water Intake
           </h2>
 
-          <p className="text-gray-600 mt-2">
+          <p className="text-ink-600 mt-2">
             Track your total water intake for today.
           </p>
 
@@ -717,14 +717,14 @@ export default function Calories() {
                 setWater(e.target.value)
               }
               placeholder="Water in ml"
-              className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-3 border border-cream-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-clay-500"
               disabled={waterLoading}
             />
 
             <button
               onClick={updateWater}
               disabled={waterLoading}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold rounded-xl"
+              className="px-6 py-3 bg-clay-600 hover:bg-clay-700 disabled:bg-ink-400 text-white font-bold rounded-xl"
             >
               {waterLoading
                 ? "Saving..."
@@ -732,7 +732,7 @@ export default function Calories() {
             </button>
           </div>
 
-          <p className="mt-3 text-sm text-gray-500">
+          <p className="mt-3 text-sm text-ink-500">
             Today's total:{" "}
             <span className="font-semibold">
               {Math.round(
@@ -746,7 +746,7 @@ export default function Calories() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-sm text-gray-500 text-center pb-8">
+        <p className="text-sm text-ink-500 text-center pb-8">
           Nutrition and calorie values generated by AI
           are estimates for informational purposes only.
           They should not replace professional dietary or

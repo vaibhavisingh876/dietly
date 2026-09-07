@@ -167,29 +167,33 @@ export default function Nav() {
           DESKTOP / MAIN NAVBAR
       ========================================= */}
       <nav
-        className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ${
+        className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 w-[95vw] max-w-5xl ${
           isScrolled
-            ? "top-4 scale-95"
-            : "top-6 scale-100"
+            ? "top-3 scale-[0.98]"
+            : "top-5 scale-100"
         }`}
       >
-        <div className="bg-white/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 flex items-center gap-2 max-w-[95vw]">
+        <div className="bg-cream-50/95 backdrop-blur-md shadow-[0_2px_20px_rgba(38,36,31,0.08)] border border-cream-300 rounded-2xl px-3 py-2 flex items-center gap-1">
           {/* LOGO */}
           <button
             type="button"
             onClick={() => handleNavigate("/")}
-            className="flex items-center gap-2 px-4 py-2 shrink-0"
+            className="flex items-center gap-2 px-3 py-2 shrink-0"
             aria-label="Go to Dietly home"
           >
-            <Leaf className="w-6 h-6 text-green-600" />
+            <img
+              src="/animated-leaf.svg"
+              alt="Dietly"
+              className="w-9 h-9"
+            />
 
-            <span className="text-xl font-bold text-gray-800">
+            <span className="font-display text-lg font-semibold text-forest-700">
               Dietly
             </span>
           </button>
 
           {/* DESKTOP NAVIGATION */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-0.5 ml-2">
             {visibleLinks.map((link) => {
               const Icon = link.icon;
               const isActive =
@@ -200,10 +204,10 @@ export default function Nav() {
                   type="button"
                   key={link.name}
                   onClick={() => handleNavigate(link.href)}
-                  className={`relative px-4 py-2.5 rounded-full font-semibold transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${
+                  className={`relative px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center gap-1.5 whitespace-nowrap ${
                     isActive
-                      ? "bg-green-600 text-white shadow-md"
-                      : "text-gray-600 hover:text-green-700 hover:bg-green-50"
+                      ? "bg-forest-700 text-white"
+                      : "text-ink-600 hover:text-forest-700 hover:bg-forest-50"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -214,7 +218,7 @@ export default function Nav() {
           </div>
 
           {/* DESKTOP AUTH SECTION */}
-          <div className="hidden md:flex items-center gap-2 ml-2 shrink-0">
+          <div className="hidden md:flex items-center gap-2 ml-auto shrink-0">
             {isLoggedIn ? (
               <>
                 {/* USER NAME */}
@@ -222,10 +226,10 @@ export default function Nav() {
                   type="button"
                   onClick={() => handleNavigate("/profile")}
                   title={userName}
-                  className={`max-w-[180px] px-4 py-2.5 rounded-full font-semibold transition-all duration-300 text-white flex items-center gap-2 ${
+                  className={`max-w-[180px] px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-white flex items-center gap-2 ${
                     activeTab === "Profile"
-                      ? "bg-green-700 shadow-md"
-                      : "bg-green-600 hover:bg-green-700"
+                      ? "bg-clay-600"
+                      : "bg-clay-500 hover:bg-clay-600"
                   }`}
                 >
                   <User className="w-4 h-4 shrink-0" />
@@ -239,7 +243,7 @@ export default function Nav() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-4 py-2.5 rounded-full font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-300 flex items-center gap-2"
+                  className="px-3.5 py-2 rounded-lg font-medium text-sm text-ink-500 hover:text-clay-600 hover:bg-clay-50 transition-colors duration-200 flex items-center gap-1.5"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -253,10 +257,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/login")
                   }
-                  className={`px-4 py-2.5 rounded-full font-semibold transition-all duration-300 ${
+                  className={`px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
                     activeTab === "Login"
-                      ? "text-white bg-green-600 shadow-md"
-                      : "text-green-700 hover:bg-green-50"
+                      ? "text-white bg-forest-700"
+                      : "text-forest-700 hover:bg-forest-50"
                   }`}
                 >
                   Login
@@ -268,10 +272,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/register")
                   }
-                  className={`px-4 py-2.5 rounded-full font-semibold transition-all duration-300 ${
+                  className={`px-3.5 py-2 rounded-lg font-medium text-sm text-white bg-clay-500 hover:bg-clay-600 transition-colors duration-200 ${
                     activeTab === "Register"
-                      ? "text-white bg-green-600 shadow-md"
-                      : "text-green-700 hover:bg-green-50"
+                      ? "bg-clay-600"
+                      : ""
                   }`}
                 >
                   Register
@@ -286,7 +290,7 @@ export default function Nav() {
             onClick={() =>
               setIsMobileMenuOpen((prev) => !prev)
             }
-            className="md:hidden p-2 rounded-full hover:bg-green-50 transition-colors"
+            className="md:hidden ml-auto p-2 rounded-lg hover:bg-forest-50 transition-colors"
             aria-label={
               isMobileMenuOpen
                 ? "Close navigation menu"
@@ -294,9 +298,9 @@ export default function Nav() {
             }
           >
             {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 text-ink-700" />
             ) : (
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5 text-ink-700" />
             )}
           </button>
         </div>
@@ -306,8 +310,8 @@ export default function Nav() {
           MOBILE MENU
       ========================================= */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden">
-          <div className="absolute top-24 left-4 right-4 bg-white rounded-3xl shadow-2xl p-4 space-y-2">
+        <div className="fixed inset-0 z-40 bg-ink-900/40 backdrop-blur-sm md:hidden">
+          <div className="absolute top-24 left-4 right-4 bg-cream-50 rounded-2xl shadow-2xl border border-cream-300 p-3 space-y-1">
             {/* NAV LINKS */}
             {visibleLinks.map((link) => {
               const Icon = link.icon;
@@ -321,10 +325,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate(link.href)
                   }
-                  className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-bold transition-all ${
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium transition-colors ${
                     isActive
-                      ? "bg-green-600 text-white"
-                      : "text-gray-700 hover:bg-green-600 hover:text-white"
+                      ? "bg-forest-700 text-white"
+                      : "text-ink-700 hover:bg-forest-50"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -341,10 +345,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/login")
                   }
-                  className={`w-full px-6 py-4 rounded-2xl font-semibold text-left transition-colors ${
+                  className={`w-full px-5 py-3.5 rounded-xl font-medium text-left transition-colors ${
                     activeTab === "Login"
-                      ? "bg-green-600 text-white"
-                      : "text-green-700 hover:bg-green-100"
+                      ? "bg-forest-700 text-white"
+                      : "text-forest-700 hover:bg-forest-50"
                   }`}
                 >
                   Login
@@ -355,10 +359,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/register")
                   }
-                  className={`w-full px-6 py-4 rounded-2xl font-semibold text-left transition-colors ${
+                  className={`w-full px-5 py-3.5 rounded-xl font-medium text-left transition-colors ${
                     activeTab === "Register"
-                      ? "bg-green-600 text-white"
-                      : "text-green-700 hover:bg-green-100"
+                      ? "bg-clay-600 text-white"
+                      : "text-clay-600 hover:bg-clay-50"
                   }`}
                 >
                   Register
@@ -374,10 +378,10 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/profile")
                   }
-                  className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-colors ${
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium transition-colors ${
                     activeTab === "Profile"
-                      ? "bg-green-600 text-white"
-                      : "text-gray-700 hover:bg-green-100"
+                      ? "bg-forest-700 text-white"
+                      : "text-ink-700 hover:bg-forest-50"
                   }`}
                 >
                   <User className="w-5 h-5" />
@@ -390,7 +394,7 @@ export default function Nav() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-red-600 hover:bg-red-50 font-semibold"
+                  className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl text-clay-600 hover:bg-clay-50 font-medium"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout

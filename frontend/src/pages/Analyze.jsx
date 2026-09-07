@@ -179,20 +179,20 @@ export default function Analyze() {
     : [];
 
   return (
-    <div className="min-h-screen bg-green-50 px-4 pt-28 pb-8">
+    <div className="min-h-screen dietly-page-bg px-4 pt-28 pb-8">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-indigo-100">
-              <Sparkles className="w-7 h-7 text-indigo-600" />
+            <div className="p-3 rounded-2xl bg-clay-100">
+              <Sparkles className="w-7 h-7 text-clay-600" />
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">
+              <h1 className="font-display text-3xl font-semibold text-ink-900">
                 AI Meal Analyzer
               </h1>
 
-              <p className="text-slate-600 mt-1">
+              <p className="text-ink-600 mt-1">
                 Describe your meal and get an
                 AI-powered nutrition estimate.
               </p>
@@ -208,13 +208,13 @@ export default function Analyze() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border p-6">
+        <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
           <div className="flex items-center gap-2 mb-3">
-            <Utensils className="w-5 h-5 text-indigo-600" />
+            <Utensils className="w-5 h-5 text-clay-600" />
 
             <label
               htmlFor="meal-type"
-              className="font-semibold text-slate-900"
+              className="font-semibold text-ink-900"
             >
               Meal Type
             </label>
@@ -227,7 +227,7 @@ export default function Analyze() {
               setMealType(e.target.value)
             }
             disabled={loading}
-            className="w-full sm:w-64 rounded-xl border border-slate-300 px-4 py-3 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+            className="w-full sm:w-64 rounded-xl border border-cream-300 px-4 py-3 bg-cream-50 text-ink-900 outline-none focus:ring-2 focus:ring-clay-500 disabled:opacity-60"
           >
             {MEAL_TYPES.map((type) => (
               <option
@@ -248,14 +248,14 @@ export default function Analyze() {
         </div>
 
         {loading && (
-          <div className="mt-8 bg-white rounded-2xl shadow-sm border p-10 text-center">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto" />
+          <div className="mt-8 bg-cream-50 rounded-2xl shadow-sm border p-10 text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-clay-600 mx-auto" />
 
-            <h2 className="mt-4 text-lg font-semibold text-slate-900">
+            <h2 className="mt-4 text-lg font-semibold text-ink-900">
               Analyzing your meal...
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-ink-500">
               This may take a few seconds.
             </p>
           </div>
@@ -263,32 +263,32 @@ export default function Analyze() {
 
         {result && !loading && (
           <div className="mt-8 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-green-100">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <div className="p-2 rounded-xl bg-forest-100">
+                  <CheckCircle2 className="w-6 h-6 text-forest-600" />
                 </div>
 
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">
+                  <h2 className="font-display text-xl font-semibold text-ink-900">
                     Analysis Complete
                   </h2>
 
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-ink-500 mt-1">
                     {mealType}
                   </p>
                 </div>
               </div>
 
               {result.summary && (
-                <p className="mt-5 text-slate-700 leading-7">
+                <p className="mt-5 text-ink-700 leading-7">
                   {result.summary}
                 </p>
               )}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-5">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
+              <h2 className="text-xl font-semibold text-ink-900 mb-5">
                 Nutrition Breakdown
               </h2>
 
@@ -326,7 +326,7 @@ export default function Analyze() {
 
               {nutritionData.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">
+                  <h3 className="mb-3 text-sm font-semibold text-ink-700">
                     Estimated nutrients in grams
                   </h3>
                   <div className="h-72">
@@ -378,8 +378,8 @@ export default function Analyze() {
 
             {Array.isArray(result.feedback) &&
               result.feedback.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-sm border p-6">
-                  <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
+                  <h2 className="text-xl font-semibold text-ink-900 mb-4">
                     AI Feedback
                   </h2>
 
@@ -390,10 +390,10 @@ export default function Analyze() {
                           key={`${item.text}-${index}`}
                           className={`rounded-xl p-4 ${
                             item.type === "positive"
-                              ? "bg-green-50 text-green-800"
+                              ? "bg-forest-50 text-forest-800"
                               : item.type === "warning"
                               ? "bg-amber-50 text-amber-800"
-                              : "bg-slate-50 text-slate-700"
+                              : "bg-cream-100 text-ink-700"
                           }`}
                         >
                           {item.text}
@@ -417,7 +417,7 @@ export default function Analyze() {
                 onClick={() =>
                   navigate("/history")
                 }
-                className="flex-1 rounded-xl bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700"
+                className="flex-1 rounded-xl bg-clay-600 text-white py-3 font-medium hover:bg-clay-700"
               >
                 View Meal History
               </button>
@@ -428,7 +428,7 @@ export default function Analyze() {
                   setResult(null);
                   setError("");
                 }}
-                className="flex-1 rounded-xl border border-slate-300 bg-white text-slate-700 py-3 font-medium hover:bg-slate-50"
+                className="flex-1 rounded-xl border border-cream-300 bg-cream-50 text-ink-700 py-3 font-medium hover:bg-cream-100"
               >
                 Analyze Another Meal
               </button>
@@ -448,16 +448,16 @@ function NutritionCard({
   const number = toNumber(value);
 
   return (
-    <div className="rounded-xl bg-slate-50 border p-4 text-center">
-      <p className="text-sm text-slate-500">
+    <div className="rounded-xl bg-cream-100 border p-4 text-center">
+      <p className="text-sm text-ink-500">
         {label}
       </p>
 
-      <p className="text-2xl font-bold text-slate-900 mt-1">
+      <p className="text-2xl font-bold text-ink-900 mt-1">
         {Math.round(number * 10) / 10}
       </p>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-ink-400">
         {unit}
       </p>
     </div>
