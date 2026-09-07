@@ -357,25 +357,25 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-forest-600 animate-spin" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 text-slate-900 flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen bg-cream-100 text-ink-900 flex flex-col items-center justify-center px-4">
         <AlertTriangle className="w-8 h-8 mb-3 text-yellow-400" />
 
-        <p className="text-slate-600 text-center">
+        <p className="text-ink-600 text-center">
           Failed to load your profile.
         </p>
 
         <button
           type="button"
           onClick={fetchProfile}
-          className="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 rounded-xl"
+          className="mt-4 px-5 py-2 bg-forest-600 hover:bg-forest-700 rounded-xl"
         >
           Try Again
         </button>
@@ -384,9 +384,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-emerald-50 text-slate-900 pt-28 pb-12">
+    <div className="min-h-screen bg-cream-100 text-ink-900 pt-28 pb-12">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden">
+        <div className="bg-cream-50 rounded-2xl shadow-sm border border-forest-100 overflow-hidden">
           
 
           {/* MESSAGES */}
@@ -399,7 +399,7 @@ export default function Profile() {
             )}
 
             {success && (
-              <div className="mt-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+              <div className="mt-5 p-3 bg-forest-50 border border-forest-200 text-forest-700 rounded-lg text-sm">
                 {success}
               </div>
             )}
@@ -410,41 +410,41 @@ export default function Profile() {
             <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
 
               {/* LEFT SIDE */}
-              <div className="p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-green-100">
+              <div className="p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-forest-100">
 
                 {/* Profile */}
                 <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                    <User className="w-12 h-12 text-green-600" />
+                  <div className="w-24 h-24 rounded-full bg-forest-100 flex items-center justify-center mx-auto mb-4">
+                    <User className="w-12 h-12 text-forest-600" />
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                  <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-900">
                     {user.name || user.email?.split("@")[0]}
                   </h1>
 
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-ink-500 mt-1">
                     {user.email}
                   </p>
                 </div>
 
-                <div className="my-7 border-t border-green-100" />
+                <div className="my-7 border-t border-forest-100" />
 
                 {/* Calorie Goal */}
                 {profile.calorieGoal && (
-                  <div className="p-5 rounded-2xl bg-green-50 border border-green-200 text-center">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                      <Activity className="w-6 h-6 text-green-600" />
+                  <div className="p-5 rounded-2xl bg-forest-50 border border-forest-200 text-center">
+                    <div className="w-12 h-12 rounded-full bg-forest-100 flex items-center justify-center mx-auto mb-3">
+                      <Activity className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-green-700 font-semibold">
+                    <p className="text-forest-700 font-semibold">
                       Estimated daily calorie goal
                     </p>
 
-                    <p className="text-3xl font-bold text-slate-900 mt-2">
+                    <p className="text-3xl font-bold text-ink-900 mt-2">
                       {profile.calorieGoalOverride || profile.calorieGoal} kcal
                     </p>
 
-                    <p className="text-xs text-green-600 mt-2">
+                    <p className="text-xs text-forest-600 mt-2">
                       This is an estimate based on your profile, not medical advice.
                     </p>
                   </div>
@@ -456,7 +456,7 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => setEditing(true)}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg"
+                    className="w-full bg-forest-600 hover:bg-forest-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg"
                   >
                     Edit Profile
                   </button>
@@ -464,7 +464,7 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={redoQuestionnaire}
-                    className="w-full bg-white hover:bg-green-50 border border-green-300 text-green-700 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-cream-50 hover:bg-forest-50 border border-forest-300 text-forest-700 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     <RotateCcw className="w-5 h-5" />
                     Redo Questionnaire
@@ -484,91 +484,91 @@ export default function Profile() {
               {/* RIGHT SIDE */}
               <div className="p-6 sm:p-8">
 
-                <h2 className="text-xl font-bold text-slate-900 mb-5">
+                <h2 className="font-display text-xl font-semibold text-ink-900 mb-5">
                   Your Profile
                 </h2>
 
                 <div className="space-y-0">
 
                   {/* Height */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Ruler className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Ruler className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Height:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.height || "-"} cm
                       </strong>
                     </p>
                   </div>
 
                   {/* Weight */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Scale className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Scale className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Weight:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.weight || "-"} kg
                       </strong>
                     </p>
                   </div>
 
                   {/* Age */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Age:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.age || "-"}
                       </strong>
                     </p>
                   </div>
 
                   {/* Lifestyle */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Activity className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Activity className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Lifestyle:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.lifestyle || "-"}
                       </strong>
                     </p>
                   </div>
 
                   {/* Goals */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Target className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Target className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Goals:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.healthGoals?.join(", ") || "-"}
                       </strong>
                     </p>
                   </div>
 
                   {/* Diet */}
-                  <div className="flex items-center gap-4 py-4 border-b border-green-100">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <Apple className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <Apple className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Diet:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.dietaryPreferences || "-"}
                       </strong>
                     </p>
@@ -576,13 +576,13 @@ export default function Profile() {
 
                   {/* Allergies */}
                   <div className="flex items-center gap-4 py-4">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <ShieldAlert className="w-6 h-6 text-green-600" />
+                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+                      <ShieldAlert className="w-6 h-6 text-forest-600" />
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-ink-600">
                       Allergies:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-ink-900">
                         {profile.allergies?.length
                           ? profile.allergies.join(", ")
                           : "None"}
@@ -598,7 +598,7 @@ export default function Profile() {
               <div className = "p-6 space-y-5">
               {/* NAME */ }
               <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-ink-400 mb-2">
               Full Name
             </label>
 
@@ -607,14 +607,14 @@ export default function Profile() {
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
             />
           </div>
 
           {/* BASIC INFO */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">
+              <label className="block text-xs text-ink-400 mb-1">
                 Age
               </label>
 
@@ -625,12 +625,12 @@ export default function Profile() {
                 name="age"
                 value={form.age}
                 onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1">
+              <label className="block text-xs text-ink-400 mb-1">
                 Height (cm)
               </label>
 
@@ -640,12 +640,12 @@ export default function Profile() {
                 name="height"
                 value={form.height}
                 onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1">
+              <label className="block text-xs text-ink-400 mb-1">
                 Weight (kg)
               </label>
 
@@ -655,14 +655,14 @@ export default function Profile() {
                 name="weight"
                 value={form.weight}
                 onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
               />
             </div>
           </div>
 
           {/* GENDER */}
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-ink-400 mb-2">
               Gender
             </label>
 
@@ -670,7 +670,7 @@ export default function Profile() {
               name="gender"
               value={form.gender}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
             >
               <option value="">
                 Select gender
@@ -692,7 +692,7 @@ export default function Profile() {
 
           {/* DIET */}
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-ink-400 mb-2">
               Diet Preference
             </label>
 
@@ -702,7 +702,7 @@ export default function Profile() {
                 form.dietaryPreferences
               }
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
             >
               <option value="">
                 Select one
@@ -723,7 +723,7 @@ export default function Profile() {
 
           {/* LIFESTYLE */}
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-ink-400 mb-2">
               Lifestyle
             </label>
 
@@ -731,7 +731,7 @@ export default function Profile() {
               name="lifestyle"
               value={form.lifestyle}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-slate-900 outline-none focus:border-green-400"
+              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
             >
               <option value="">
                 Select one
@@ -752,7 +752,7 @@ export default function Profile() {
 
           {/* ALLERGIES */}
           <div>
-            <p className="text-sm font-semibold text-gray-300 mb-2">
+            <p className="text-sm font-semibold text-ink-400 mb-2">
               Allergies
             </p>
 
@@ -776,8 +776,8 @@ export default function Profile() {
                         )
                       }
                       className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
-                          ? "bg-red-500 border-red-400 text-slate-900"
-                          : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
+                          ? "bg-red-500 border-red-400 text-ink-900"
+                          : "bg-ink-700 border-ink-600 text-ink-400 hover:border-ink-400"
                         }`}
                     >
                       {allergy}
@@ -790,7 +790,7 @@ export default function Profile() {
 
           {/* GOALS */}
           <div>
-            <p className="text-sm font-semibold text-gray-300 mb-2">
+            <p className="text-sm font-semibold text-ink-400 mb-2">
               Health Goals
             </p>
 
@@ -814,8 +814,8 @@ export default function Profile() {
                         )
                       }
                       className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
-                          ? "bg-green-500 border-green-400 text-slate-900"
-                          : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"
+                          ? "bg-forest-500 border-forest-400 text-ink-900"
+                          : "bg-ink-700 border-ink-600 text-ink-400 hover:border-ink-400"
                         }`}
                     >
                       {goal}
@@ -832,7 +832,7 @@ export default function Profile() {
               type="button"
               onClick={handleSubmit}
               disabled={saving}
-              className="flex-1 bg-green-600 hover:bg-green-700 py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 font-semibold shadow-md"
+              className="flex-1 bg-forest-600 hover:bg-forest-700 py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 font-semibold shadow-md"
             >
               {saving && (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -847,7 +847,7 @@ export default function Profile() {
               type="button"
               onClick={cancelEditing}
               disabled={saving}
-              className="flex-1 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl disabled:opacity-50 font-semibold"
+              className="flex-1 bg-cream-50 hover:bg-cream-100 border border-cream-300 text-ink-700 py-3 rounded-xl disabled:opacity-50 font-semibold"
             >
               Cancel
             </button>

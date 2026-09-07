@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 body {
-  /* This uses a Tailwind utility class defined above */
-  @apply bg-gray-50;
+  @apply bg-cream-100 text-ink-800 font-sans antialiased;
+}
+
+::selection {
+  @apply bg-clay-200 text-clay-900;
+}
+
+:focus-visible {
+  outline: 2px solid #C1502E;
+  outline-offset: 2px;
+}
+
+.dietly-page-bg {
+  background-color: #f5fff8;
+  background-image: url("/dietly-background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }

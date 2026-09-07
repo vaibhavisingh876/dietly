@@ -7,6 +7,7 @@ import {
   Mail,
   User,
   ArrowRight,
+  Leaf,
 } from "lucide-react";
 
 import api from "../api/api";
@@ -101,31 +102,31 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* BRAND */}
         <div className="text-center mb-8">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-3xl font-bold text-green-700"
+            className="inline-flex items-center gap-2 font-display text-3xl font-semibold text-forest-700"
           >
-            <span className="text-4xl">🌿</span>
+            <Leaf className="w-7 h-7 text-clay-500" />
             Dietly
           </Link>
 
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-ink-600">
             Start your personalized nutrition journey.
           </p>
         </div>
 
         {/* CARD */}
-        <div className="bg-white rounded-3xl shadow-xl border border-green-100 p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm border border-forest-100 p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="font-display text-2xl font-semibold text-ink-900">
               Create your account
             </h1>
 
-            <p className="text-gray-500 mt-1">
+            <p className="text-ink-500 mt-1">
               It only takes a minute to get started.
             </p>
           </div>
@@ -142,13 +143,13 @@ export default function Register() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Full name
               </label>
 
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="name"
@@ -158,7 +159,7 @@ export default function Register() {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Vaibhavi Singh"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-4 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
               </div>
@@ -168,13 +169,13 @@ export default function Register() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Email
               </label>
 
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="email"
@@ -184,7 +185,7 @@ export default function Register() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-4 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
               </div>
@@ -194,13 +195,13 @@ export default function Register() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Password
               </label>
 
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="password"
@@ -212,7 +213,7 @@ export default function Register() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-12 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-12 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
 
@@ -221,7 +222,7 @@ export default function Register() {
                   onClick={() =>
                     setShowPassword((prev) => !prev)
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -241,13 +242,13 @@ export default function Register() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-ink-700 mb-2"
               >
                 Confirm password
               </label>
 
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
 
                 <input
                   id="confirmPassword"
@@ -261,7 +262,7 @@ export default function Register() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   placeholder="Re-enter your password"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-12 py-3.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-12 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
                   disabled={loading}
                 />
 
@@ -272,7 +273,7 @@ export default function Register() {
                       (prev) => !prev
                     )
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
                   aria-label={
                     showConfirmPassword
                       ? "Hide password"
@@ -292,7 +293,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-3.5 transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-forest-600 hover:bg-forest-700 disabled:bg-forest-300 text-white font-bold py-3.5 transition"
             >
               {loading ? (
                 "Creating account..."
@@ -306,11 +307,11 @@ export default function Register() {
           </form>
 
           {/* LOGIN */}
-          <p className="text-center text-sm text-gray-600 mt-7">
+          <p className="text-center text-sm text-ink-600 mt-7">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="font-bold text-green-700 hover:text-green-800"
+              className="font-bold text-forest-700 hover:text-forest-800"
             >
               Sign in
             </Link>

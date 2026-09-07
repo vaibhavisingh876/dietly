@@ -58,23 +58,23 @@ function StatCard({
   accent,
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+    <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5">
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${accent}`}
       >
         <Icon className="w-5 h-5" />
       </div>
 
-      <p className="text-2xl font-bold text-gray-900">
+      <p className="text-2xl font-bold text-ink-900">
         {value}
       </p>
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-ink-500">
         {label}
       </p>
 
       {sub && (
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-ink-400 mt-1">
           {sub}
         </p>
       )}
@@ -86,13 +86,13 @@ function ChartInsight({ text }) {
   if (!text) return null;
 
   return (
-    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
-      <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-clay-100 bg-clay-50 p-4">
+      <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-clay-600" />
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+        <p className="text-xs font-semibold uppercase tracking-wide text-clay-700">
           AI interpretation
         </p>
-        <p className="mt-1 text-sm leading-6 text-slate-700">
+        <p className="mt-1 text-sm leading-6 text-ink-700">
           {text}
         </p>
       </div>
@@ -141,11 +141,11 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-green-600 mx-auto mb-3" />
+          <Loader2 className="w-8 h-8 animate-spin text-forest-600 mx-auto mb-3" />
 
-          <p className="text-gray-500">
+          <p className="text-ink-500">
             Loading your progress...
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function ProgressPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-24 px-4">
+      <div className="min-h-screen bg-cream-100 pt-24 px-4">
         <div className="max-w-md mx-auto flex items-center gap-3 p-5 bg-red-50 border border-red-200 text-red-700 rounded-2xl">
           <AlertTriangle className="w-6 h-6 flex-shrink-0" />
 
@@ -185,16 +185,16 @@ export default function ProgressPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen dietly-page-bg pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* HEADER */}
         <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-4xl font-extrabold text-ink-900">
               Your Progress
             </h1>
 
-            <p className="text-gray-500">
+            <p className="text-ink-500">
               Real data from your logged meals and
               calorie tracking.
             </p>
@@ -208,8 +208,8 @@ export default function ProgressPage() {
                 onClick={() => setDays(d)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
                   days === d
-                    ? "bg-green-600 text-white shadow"
-                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                    ? "bg-forest-600 text-white shadow"
+                    : "bg-cream-50 text-ink-600 border border-cream-300 hover:bg-cream-200"
                 }`}
               >
                 {d} days
@@ -220,14 +220,14 @@ export default function ProgressPage() {
 
         {/* EMPTY STATE */}
         {!hasAnyData && (
-          <div className="mb-8 text-center py-12 bg-white rounded-3xl border border-dashed border-gray-300">
-            <Utensils className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <div className="mb-8 text-center py-12 bg-cream-50 rounded-2xl border border-dashed border-ink-400">
+            <Utensils className="w-10 h-10 text-ink-400 mx-auto mb-3" />
 
-            <p className="text-gray-500">
+            <p className="text-ink-500">
               No tracked data yet in this range.
             </p>
 
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-ink-400 text-sm mt-1">
               Log a meal on the Analyze page or add
               calories on the Calories page to see your
               progress here.
@@ -244,7 +244,7 @@ export default function ProgressPage() {
                 label="Today's Calories"
                 value={`${dashboard.today.calories} kcal`}
                 sub={`Goal: ${dashboard.today.goal} kcal • ${dashboard.today.remaining} remaining`}
-                accent="bg-green-100 text-green-600"
+                accent="bg-forest-100 text-forest-600"
               />
 
               <StatCard
@@ -252,7 +252,7 @@ export default function ProgressPage() {
                 label="Average Calories"
                 value={`${dashboard.averageCalories} kcal`}
                 sub="Over tracked days in this range"
-                accent="bg-blue-100 text-blue-600"
+                accent="bg-clay-100 text-clay-600"
               />
 
               <StatCard
@@ -281,13 +281,13 @@ export default function ProgressPage() {
             </div>
 
             {dashboard.insights?.overall && (
-              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
-                <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-indigo-600" />
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-clay-200 bg-cream-50 p-5 shadow-sm">
+                <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-clay-600" />
                 <div>
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-ink-900">
                     Progress summary
                   </p>
-                  <p className="mt-1 leading-6 text-slate-600">
+                  <p className="mt-1 leading-6 text-ink-600">
                     {dashboard.insights.overall}
                   </p>
                 </div>
@@ -302,8 +302,8 @@ export default function ProgressPage() {
 
             {/* CALORIES TREND + GOAL */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
+                <h3 className="text-lg font-semibold text-ink-800 mb-4">
                   {dashboard.rangeDays}-Day Calorie Trend
                 </h3>
 
@@ -364,7 +364,7 @@ export default function ProgressPage() {
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-gray-400 text-sm py-16 text-center">
+                  <p className="text-ink-400 text-sm py-16 text-center">
                     No calorie data in this range yet.
                   </p>
                 )}
@@ -372,8 +372,8 @@ export default function ProgressPage() {
                 <ChartInsight text={dashboard.insights?.calorieTrend} />
               </div>
 
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
+                <h3 className="text-lg font-semibold text-ink-800 mb-4">
                   Goal vs Consumed (per day)
                 </h3>
 
@@ -442,7 +442,7 @@ export default function ProgressPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-gray-400 text-sm py-16 text-center">
+                  <p className="text-ink-400 text-sm py-16 text-center">
                     No calorie data in this range yet.
                   </p>
                 )}
@@ -453,10 +453,10 @@ export default function ProgressPage() {
 
             {/* MACROS + WATER */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
+                <h3 className="text-lg font-semibold text-ink-800 mb-4">
                   Logged Macro Totals{" "}
-                  <span className="text-sm font-normal text-gray-400">
+                  <span className="text-sm font-normal text-ink-400">
                     (grams; protein, carbs and fat)
                   </span>
                 </h3>
@@ -501,14 +501,14 @@ export default function ProgressPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-gray-400 text-sm py-16 text-center">
+                  <p className="text-ink-400 text-sm py-16 text-center">
                     No macro data yet — log a meal
                     via the Analyze page.
                   </p>
                 )}
 
                 {dashboard.macros.fiber > 0 && (
-                  <p className="mt-2 text-center text-sm text-gray-500">
+                  <p className="mt-2 text-center text-sm text-ink-500">
                     Fibre logged separately: {formatNumber(Math.round(dashboard.macros.fiber))} g
                   </p>
                 )}
@@ -516,8 +516,8 @@ export default function ProgressPage() {
                 <ChartInsight text={dashboard.insights?.macroDistribution} />
               </div>
 
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
+                <h3 className="text-lg font-semibold text-ink-800 mb-4 flex items-center gap-2">
                   <Droplets className="w-5 h-5 text-cyan-500" />
                   Water Intake Trend
                 </h3>
@@ -573,7 +573,7 @@ export default function ProgressPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-gray-400 text-sm py-16 text-center">
+                  <p className="text-ink-400 text-sm py-16 text-center">
                     No water intake logged yet —
                     track it on the Calories page.
                   </p>
@@ -584,13 +584,13 @@ export default function ProgressPage() {
             </div>
 
             {/* RECENT MEALS */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
+              <h3 className="text-lg font-semibold text-ink-800 mb-4">
                 Recent Meals
               </h3>
 
               {dashboard.recentMeals.length === 0 ? (
-                <p className="text-gray-400 text-sm py-8 text-center">
+                <p className="text-ink-400 text-sm py-8 text-center">
                   No meals logged in this range yet.
                 </p>
               ) : (
@@ -598,19 +598,19 @@ export default function ProgressPage() {
                   {dashboard.recentMeals.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50"
+                      className="flex items-center justify-between p-3 rounded-xl border border-cream-200 hover:bg-cream-100"
                     >
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-ink-800">
                           {m.name}
                         </p>
 
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-ink-400">
                           {formatShortDate(m.date)}
                         </p>
                       </div>
 
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-ink-600">
                         {m.calories} kcal
                       </p>
                     </div>
