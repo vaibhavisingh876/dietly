@@ -58,7 +58,7 @@ function StatCard({
   accent,
 }) {
   return (
-    <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5">
+    <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${accent}`}
       >
@@ -190,7 +190,7 @@ export default function ProgressPage() {
         {/* HEADER */}
         <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold text-ink-900">
+            <h1 className="font-display text-4xl font-semibold text-ink-900">
               Your Progress
             </h1>
 
@@ -302,8 +302,8 @@ export default function ProgressPage() {
 
             {/* CALORIES TREND + GOAL */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
-                <h3 className="text-lg font-semibold text-ink-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
+                <h3 className="font-display text-lg font-semibold text-ink-800 mb-4">
                   {dashboard.rangeDays}-Day Calorie Trend
                 </h3>
 
@@ -372,8 +372,8 @@ export default function ProgressPage() {
                 <ChartInsight text={dashboard.insights?.calorieTrend} />
               </div>
 
-              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
-                <h3 className="text-lg font-semibold text-ink-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
+                <h3 className="font-display text-lg font-semibold text-ink-800 mb-4">
                   Goal vs Consumed (per day)
                 </h3>
 
@@ -453,8 +453,8 @@ export default function ProgressPage() {
 
             {/* MACROS + WATER */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
-                <h3 className="text-lg font-semibold text-ink-800 mb-4">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
+                <h3 className="font-display text-lg font-semibold text-ink-800 mb-4">
                   Logged Macro Totals{" "}
                   <span className="text-sm font-normal text-ink-400">
                     (grams; protein, carbs and fat)
@@ -516,8 +516,8 @@ export default function ProgressPage() {
                 <ChartInsight text={dashboard.insights?.macroDistribution} />
               </div>
 
-              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
-                <h3 className="text-lg font-semibold text-ink-800 mb-4 flex items-center gap-2">
+              <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
+                <h3 className="font-display text-lg font-semibold text-ink-800 mb-4 flex items-center gap-2">
                   <Droplets className="w-5 h-5 text-cyan-500" />
                   Water Intake Trend
                 </h3>
@@ -584,8 +584,8 @@ export default function ProgressPage() {
             </div>
 
             {/* RECENT MEALS */}
-            <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6">
-              <h3 className="text-lg font-semibold text-ink-800 mb-4">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
+              <h3 className="font-display text-lg font-semibold text-ink-800 mb-4">
                 Recent Meals
               </h3>
 

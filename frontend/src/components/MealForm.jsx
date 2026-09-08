@@ -47,7 +47,7 @@ export default function MealForm({ onSubmit, loading = false }) {
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="w-5 h-5 text-forest-600" />
 
-        <h3 className="font-semibold text-ink-800">
+        <h3 className="font-display font-semibold text-ink-800">
           Describe your meal
         </h3>
       </div>

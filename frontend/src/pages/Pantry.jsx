@@ -349,7 +349,7 @@ export default function PantryPage() {
         )}
 
         {/* Stats & Actions */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 mb-8 border border-forest-100">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 mb-8 border border-forest-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex gap-6">
               <div className="text-center">
@@ -402,7 +402,7 @@ export default function PantryPage() {
 
         {/* Add Item Form */}
         {showAddForm && (
-          <div className="bg-cream-50 rounded-2xl shadow-md p-8 mb-8 border-2 border-forest-200">
+          <div className="bg-cream-50 rounded-2xl shadow-md p-8 mb-8 border-2 border-forest-200 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-display text-2xl font-semibold text-ink-800">
                 Add New Item
@@ -516,7 +516,7 @@ export default function PantryPage() {
                 {suggestedMeals.map((meal, idx) => (
                   <div
                     key={`${meal.name || "meal"}-${idx}`}
-                    className="bg-cream-50 rounded-2xl shadow-sm p-6 border-2 border-amber-100 hover:shadow-md transition-all"
+                    className="bg-cream-50 rounded-2xl shadow-sm p-6 border-2 border-amber-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-amber-200"
                   >
                     <div className="flex items-start justify-between mb-3 gap-3">
                       <h3 className="font-display text-xl font-semibold text-ink-800">
@@ -573,7 +573,7 @@ export default function PantryPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Kitchen */}
-          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-forest-100">
+          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-forest-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-forest-100 p-3 rounded-xl">
                 <Utensils className="w-7 h-7 text-forest-600" />
@@ -602,7 +602,7 @@ export default function PantryPage() {
           </div>
 
           {/* Refrigerator */}
-          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-cream-200">
+          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-cream-200 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-cream-200 p-3 rounded-xl">
                 <Refrigerator className="w-7 h-7 text-teal-600" />

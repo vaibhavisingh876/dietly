@@ -208,7 +208,7 @@ export default function Analyze() {
           </div>
         )}
 
-        <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
+        <div className="bg-cream-50 rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
           <div className="flex items-center gap-2 mb-3">
             <Utensils className="w-5 h-5 text-clay-600" />
 
@@ -251,7 +251,7 @@ export default function Analyze() {
           <div className="mt-8 bg-cream-50 rounded-2xl shadow-sm border p-10 text-center">
             <Loader2 className="w-10 h-10 animate-spin text-clay-600 mx-auto" />
 
-            <h2 className="mt-4 text-lg font-semibold text-ink-900">
+            <h2 className="mt-4 font-display text-lg font-semibold text-ink-900">
               Analyzing your meal...
             </h2>
 
@@ -263,7 +263,7 @@ export default function Analyze() {
 
         {result && !loading && (
           <div className="mt-8 space-y-6">
-            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-xl bg-forest-100">
                   <CheckCircle2 className="w-6 h-6 text-forest-600" />
@@ -287,8 +287,8 @@ export default function Analyze() {
               )}
             </div>
 
-            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
-              <h2 className="text-xl font-semibold text-ink-900 mb-5">
+            <div className="bg-cream-50 rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
+              <h2 className="font-display text-xl font-semibold text-ink-900 mb-5">
                 Nutrition Breakdown
               </h2>
 
@@ -326,7 +326,7 @@ export default function Analyze() {
 
               {nutritionData.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-ink-700">
+                  <h3 className="mb-3 font-display text-sm font-semibold text-ink-700">
                     Estimated nutrients in grams
                   </h3>
                   <div className="h-72">
@@ -378,8 +378,8 @@ export default function Analyze() {
 
             {Array.isArray(result.feedback) &&
               result.feedback.length > 0 && (
-                <div className="bg-cream-50 rounded-2xl shadow-sm border p-6">
-                  <h2 className="text-xl font-semibold text-ink-900 mb-4">
+                <div className="bg-cream-50 rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
+                  <h2 className="font-display text-xl font-semibold text-ink-900 mb-4">
                     AI Feedback
                   </h2>
 

@@ -16,10 +16,49 @@ body {
 }
 
 .dietly-page-bg {
-  background-color: #f5fff8;
-  background-image: url("/dietly-background.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  position: relative;
+  background-color: #FAF7F2;
+  isolation: isolate;
+}
+
+.dietly-page-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, rgba(43, 58, 46, 0.07) 1.5px, transparent 0);
+  background-size: 28px 28px;
+}
+
+.dietly-page-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(560px circle at 12% 15%, rgba(193, 80, 46, 0.11), transparent 60%),
+    radial-gradient(520px circle at 88% 20%, rgba(79, 115, 69, 0.16), transparent 60%),
+    radial-gradient(480px circle at 20% 92%, rgba(79, 115, 69, 0.12), transparent 60%),
+    radial-gradient(500px circle at 92% 88%, rgba(214, 120, 73, 0.10), transparent 60%);
+  animation: bg-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes bg-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2%, 2.5%) scale(1.04);
+  }
+  100% {
+    transform: translate(2.5%, -2%) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dietly-page-bg::after {
+    animation: none;
+  }
 }

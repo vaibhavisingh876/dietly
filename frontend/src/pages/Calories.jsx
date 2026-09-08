@@ -477,7 +477,7 @@ export default function Calories() {
 
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-extrabold text-ink-900">
+          <h1 className="font-display text-4xl font-semibold text-ink-900">
             Today's Calories
           </h1>
 
@@ -500,7 +500,7 @@ export default function Calories() {
         )}
 
         {/* Summary */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
             <div>
@@ -557,7 +557,7 @@ export default function Calories() {
         </div>
 
         {/* AI Meal Entry */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
           <h2 className="font-display text-2xl font-semibold text-ink-900">
             Add Meal with AI
           </h2>
@@ -632,7 +632,7 @@ export default function Calories() {
         </div>
 
         {/* Manual Meals */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
           <h2 className="font-display text-2xl font-semibold text-ink-900">
             Manual Calorie Entry
           </h2>
@@ -697,7 +697,7 @@ export default function Calories() {
         </div>
 
         {/* Water */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8">
+        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 sm:p-8 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
           <h2 className="font-display text-2xl font-semibold text-ink-900">
             Water Intake
           </h2>

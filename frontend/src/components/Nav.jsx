@@ -204,7 +204,7 @@ export default function Nav() {
                   type="button"
                   key={link.name}
                   onClick={() => handleNavigate(link.href)}
-                  className={`relative px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`relative px-3.5 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap hover:scale-125 hover:z-20 hover:shadow-md ${
                     isActive
                       ? "bg-forest-700 text-white"
                       : "text-ink-600 hover:text-forest-700 hover:bg-forest-50"
@@ -226,7 +226,7 @@ export default function Nav() {
                   type="button"
                   onClick={() => handleNavigate("/profile")}
                   title={userName}
-                  className={`max-w-[180px] px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-white flex items-center gap-2 ${
+                  className={`relative max-w-[180px] px-3.5 py-2 rounded-lg font-medium text-sm transition-all duration-200 text-white flex items-center gap-2 hover:scale-125 hover:z-20 hover:shadow-md ${
                     activeTab === "Profile"
                       ? "bg-clay-600"
                       : "bg-clay-500 hover:bg-clay-600"
@@ -243,7 +243,7 @@ export default function Nav() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-3.5 py-2 rounded-lg font-medium text-sm text-ink-500 hover:text-clay-600 hover:bg-clay-50 transition-colors duration-200 flex items-center gap-1.5"
+                  className="relative px-3.5 py-2 rounded-lg font-medium text-sm text-ink-500 hover:text-clay-600 hover:bg-clay-50 transition-all duration-200 flex items-center gap-1.5 hover:scale-125 hover:z-20 hover:shadow-md"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -257,7 +257,7 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/login")
                   }
-                  className={`px-3.5 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                  className={`relative px-3.5 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-125 hover:z-20 hover:shadow-md ${
                     activeTab === "Login"
                       ? "text-white bg-forest-700"
                       : "text-forest-700 hover:bg-forest-50"
@@ -272,7 +272,7 @@ export default function Nav() {
                   onClick={() =>
                     handleNavigate("/register")
                   }
-                  className={`px-3.5 py-2 rounded-lg font-medium text-sm text-white bg-clay-500 hover:bg-clay-600 transition-colors duration-200 ${
+                  className={`relative px-3.5 py-2 rounded-lg font-medium text-sm text-white bg-clay-500 hover:bg-clay-600 transition-all duration-200 hover:scale-125 hover:z-20 hover:shadow-md ${
                     activeTab === "Register"
                       ? "bg-clay-600"
                       : ""
