@@ -499,7 +499,7 @@ const Results = ({
       </div>
 
       <div className="bg-forest-50 rounded-2xl p-6 mb-6">
-        <h3 className="font-semibold text-ink-800 mb-3">
+        <h3 className="font-display font-semibold text-ink-800 mb-3">
           Your Preferences:
         </h3>
 

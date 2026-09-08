@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import MoltenMetal from "../components/MoltenMetal.jsx";
 import {
   Leaf,
   Apple,
@@ -78,16 +79,21 @@ export default function Home() {
     <div className="w-full min-h-screen bg-cream-100">
       {/* Hero */}
       <section className="min-h-screen flex items-center justify-center text-center bg-forest-700 px-6 pt-24 relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, #FAF7F2 1.5px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
-        />
+        <div className="absolute inset-0">
+          <MoltenMetal
+            color1="#032d1f"
+            color2="#a0f07b"
+            color3="#FAF7F2"
+            speed={0.3}
+            scale={3.4}
+            glow={1.4}
+            opacity={0.85}
+            mouseInteraction
+            mouseStrength={0.25}
+          />
+        </div>
 
-        <div className="max-w-3xl relative">
+        <div className="max-w-3xl relative z-10">
           <div className="inline-flex items-center justify-center bg-forest-600/60 border border-forest-500 p-4 rounded-2xl mb-8">
             <Leaf className="w-10 h-10 text-clay-300" />
           </div>
@@ -160,7 +166,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
               <Sparkles className="w-8 h-8 text-clay-500 mb-4" />
 
               <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
@@ -172,7 +178,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
               <BarChart3 className="w-8 h-8 text-clay-500 mb-4" />
 
               <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
@@ -184,7 +190,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
               <Utensils className="w-8 h-8 text-clay-500 mb-4" />
 
               <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
@@ -196,7 +202,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300">
+            <div className="bg-cream-50 rounded-xl p-7 border border-cream-300 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-200">
               <Target className="w-8 h-8 text-clay-500 mb-4" />
 
               <h3 className="font-display text-lg font-semibold text-forest-800 mb-2">
@@ -229,7 +235,7 @@ export default function Home() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="bg-cream-100 p-8 rounded-xl border border-cream-300 text-left hover:border-forest-300 transition-colors duration-300"
+                className="bg-cream-100 p-8 rounded-xl border border-cream-300 text-left transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-forest-300"
               >
                 <div className="text-forest-600 mb-5">
                   {feature.icon}

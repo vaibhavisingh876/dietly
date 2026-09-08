@@ -193,7 +193,7 @@ function MealDetail({
       ) &&
         meal.feedback.length > 0 && (
           <div className="space-y-2">
-            <h3 className="font-semibold text-ink-800">
+            <h3 className="font-display font-semibold text-ink-800">
               Personalized Feedback
             </h3>
 
@@ -465,7 +465,7 @@ export default function MealAnalysisPage() {
             {grouped.map(
               ([date, dayMeals]) => (
                 <div key={date}>
-                  <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
+                  <h2 className="font-display text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">
                     {formatDate(date)}
                   </h2>
 
@@ -480,7 +480,7 @@ export default function MealAnalysisPage() {
                               `/history/${meal._id}`
                             )
                           }
-                          className="w-full text-left bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5 flex items-center justify-between gap-4 hover:border-forest-300 hover:shadow-md transition-all"
+                          className="w-full text-left bg-cream-50 rounded-2xl shadow-sm border border-cream-300 p-5 flex items-center justify-between gap-4 hover:border-forest-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04]"
                         >
                           <div className="min-w-0">
                             <p className="font-semibold text-ink-800 truncate">
