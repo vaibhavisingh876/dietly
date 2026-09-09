@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Leaf } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Leaf, Loader2 } from "lucide-react";
 
 import api from "../api/api";
 import { saveAuth, getUser } from "../utils/auth";
+import FadeContent from "../components/reactbits/FadeContent.jsx";
+import SpotlightCard from "../components/reactbits/SpotlightCard.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -69,17 +71,12 @@ export default function Login() {
         );
       }
 
-      // saveAuth expects an object.
       saveAuth({
         token: data.token,
         user: data.user,
         persist: rememberMe,
       });
 
-      /*
-       * Questionnaire is an onboarding step.
-       * If the user has not completed it, send them there first.
-       */
       const user = data.user || getUser();
 
       if (user?.questionnaireCompleted === false) {
@@ -103,181 +100,181 @@ export default function Login() {
     setNotice(
       "Password reset is not available yet. Please contact the project administrator."
     );
-
     setError("");
   };
 
   return (
-    <div className="min-h-screen bg-cream-100 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen dietly-page-bg flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        <FadeContent delay={0.05}>
+          {/* BRAND */}
+          <div className="text-center mb-8">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 font-display text-3xl font-bold text-forest-800 tracking-tight"
+            >
+              <div className="w-9 h-9 rounded-xl bg-forest-100 flex items-center justify-center text-forest-700">
+                <Leaf className="w-5 h-5 text-forest-600" />
+              </div>
+              <span>Dietly</span>
+            </Link>
 
-        {/* BRAND */}
-        <div className="text-center mb-8">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 font-display text-3xl font-semibold text-forest-700"
-          >
-            <Leaf className="w-7 h-7 text-clay-500" />
-            Dietly
-          </Link>
-
-          <p className="mt-2 text-ink-600">
-            Welcome back! Let's get you eating better.
-          </p>
-        </div>
-
-        {/* CARD */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm border border-forest-100 p-8">
-          <div className="mb-6">
-            <h1 className="font-display text-2xl font-semibold text-ink-900">
-              Sign in
-            </h1>
-
-            <p className="text-ink-500 mt-1">
-              Access your personalized nutrition dashboard.
+            <p className="mt-2 text-ink-600 text-sm">
+              Welcome back! Log in to access your nutritional insights.
             </p>
           </div>
 
-          {/* ERROR */}
-          {error && (
-            <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-              {error}
+          {/* CARD */}
+          <SpotlightCard
+            className="p-8 shadow-sm border-cream-300"
+            spotlightColor="rgba(79, 115, 69, 0.12)"
+          >
+            <div className="mb-6">
+              <h1 className="font-display text-2xl font-bold text-ink-900 tracking-tight">
+                Sign in to your account
+              </h1>
+
+              <p className="text-ink-500 text-xs sm:text-sm mt-1">
+                Access your meals, macros, streaks, and pantry.
+              </p>
             </div>
-          )}
 
-          {/* NOTICE */}
-          {notice && (
-            <div className="mb-5 rounded-xl bg-forest-50 border border-forest-200 px-4 py-3 text-sm text-forest-700">
-              {notice}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* EMAIL */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-ink-700 mb-2"
-              >
-                Email
-              </label>
-
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
-
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-4 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
-                  disabled={loading}
-                />
+            {/* ERROR */}
+            {error && (
+              <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+                {error}
               </div>
-            </div>
+            )}
 
-            {/* PASSWORD */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-ink-700 mb-2"
-              >
-                Password
-              </label>
+            {/* NOTICE */}
+            {notice && (
+              <div className="mb-5 rounded-xl bg-forest-50 border border-forest-200 px-4 py-3 text-sm text-forest-800 font-medium">
+                {notice}
+              </div>
+            )}
 
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* EMAIL */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5"
+                >
+                  Email Address
+                </label>
 
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="w-full rounded-xl border border-cream-300 bg-cream-100 pl-12 pr-12 py-3.5 outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-cream-300 bg-cream-100/70 pl-10 pr-4 py-3 text-sm text-ink-900 outline-none transition-colors focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* PASSWORD */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5"
+                >
+                  Password
+                </label>
+
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    className="w-full rounded-xl border border-cream-300 bg-cream-100/70 pl-10 pr-11 py-3 text-sm text-ink-900 outline-none transition-colors focus:border-forest-500 focus:ring-2 focus:ring-forest-100"
+                    disabled={loading}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 p-0.5"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* OPTIONS */}
+              <div className="flex items-center justify-between gap-4 text-xs sm:text-sm pt-1">
+                <label className="flex items-center gap-2 text-ink-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-forest-600 accent-forest-600 focus:ring-forest-500"
+                    disabled={loading}
+                  />
+                  <span>Remember me</span>
+                </label>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowPassword((prev) => !prev)
-                  }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
+                  onClick={handleForgotPassword}
+                  className="font-semibold text-forest-700 hover:text-forest-900 transition-colors"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  Forgot password?
                 </button>
               </div>
-            </div>
 
-            {/* OPTIONS */}
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <label className="flex items-center gap-2 text-ink-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) =>
-                    setRememberMe(e.target.checked)
-                  }
-                  className="w-4 h-4 accent-forest-600"
-                  disabled={loading}
-                />
-
-                Remember me
-              </label>
-
+              {/* SUBMIT */}
               <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="font-semibold text-forest-700 hover:text-forest-800"
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-forest-700 hover:bg-forest-800 disabled:bg-forest-300 text-white font-semibold py-3 text-sm transition-colors shadow-sm mt-2"
               >
-                Forgot password?
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign in</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
-            </div>
+            </form>
 
-            {/* SUBMIT */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-forest-600 hover:bg-forest-700 disabled:bg-forest-300 text-white font-bold py-3.5 transition"
-            >
-              {loading ? (
-                "Signing in..."
-              ) : (
-                <>
-                  Sign in
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* REGISTER */}
-          <p className="text-center text-sm text-ink-600 mt-7">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="font-bold text-forest-700 hover:text-forest-800"
-            >
-              Create one
-            </Link>
-          </p>
-        </div>
+            {/* REGISTER LINK */}
+            <p className="text-center text-xs sm:text-sm text-ink-600 mt-6 pt-5 border-t border-cream-200">
+              Don't have an account yet?{" "}
+              <Link
+                to="/register"
+                className="font-bold text-clay-600 hover:text-clay-700 transition-colors"
+              >
+                Create one now
+              </Link>
+            </p>
+          </SpotlightCard>
+        </FadeContent>
       </div>
     </div>
   );

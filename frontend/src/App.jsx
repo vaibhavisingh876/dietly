@@ -1,6 +1,6 @@
-
-import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+﻿import React from "react";
+import { Routes, Route, useLocation, Link } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import Nav from "./components/Nav.jsx";
 
@@ -15,6 +15,25 @@ import Calories from "./pages/Calories.jsx";
 import MealAnalysisPage from "./pages/MealAnalysisPage.jsx";
 import Progress from "./pages/Progress.jsx";
 
+function PageTransitionWrapper({ children }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return <>{children}</>;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function AppLayout() {
   const location = useLocation();
 
@@ -23,56 +42,139 @@ function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-cream-100">
+    <div className="min-h-screen bg-cream-100 flex flex-col selection:bg-clay-200 selection:text-clay-900">
       {!hideNavbar && <Nav />}
 
-      <Routes>
-        <Route path="/" element={<Home />} />
+      <main className="flex-1">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={
+                <PageTransitionWrapper>
+                  <Home />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/login" element={<Login />} />
+            <Route
+              path="/login"
+              element={
+                <PageTransitionWrapper>
+                  <Login />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/register" element={<Register />} />
+            <Route
+              path="/register"
+              element={
+                <PageTransitionWrapper>
+                  <Register />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/questionnaire" element={<Questionnaire />} />
+            <Route
+              path="/questionnaire"
+              element={
+                <PageTransitionWrapper>
+                  <Questionnaire />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/profile"
+              element={
+                <PageTransitionWrapper>
+                  <Profile />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/analyze" element={<Analyze />} />
+            <Route
+              path="/analyze"
+              element={
+                <PageTransitionWrapper>
+                  <Analyze />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/history" element={<MealAnalysisPage />} />
+            <Route
+              path="/history"
+              element={
+                <PageTransitionWrapper>
+                  <MealAnalysisPage />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/history/:id" element={<MealAnalysisPage />} />
+            <Route
+              path="/history/:id"
+              element={
+                <PageTransitionWrapper>
+                  <MealAnalysisPage />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/pantry" element={<Pantry />} />
+            <Route
+              path="/pantry"
+              element={
+                <PageTransitionWrapper>
+                  <Pantry />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/calories" element={<Calories />} />
+            <Route
+              path="/calories"
+              element={
+                <PageTransitionWrapper>
+                  <Calories />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route path="/progress" element={<Progress />} />
+            <Route
+              path="/progress"
+              element={
+                <PageTransitionWrapper>
+                  <Progress />
+                </PageTransitionWrapper>
+              }
+            />
 
-        <Route
-          path="*"
-          element={
-            <div className="min-h-[70vh] flex items-center justify-center px-4">
-              <div className="text-center">
-                <h1 className="font-display text-6xl font-semibold text-forest-700">
-                  404
-                </h1>
+            <Route
+              path="*"
+              element={
+                <PageTransitionWrapper>
+                  <div className="min-h-[70vh] flex items-center justify-center px-4">
+                    <div className="text-center">
+                      <h1 className="font-display text-6xl font-bold text-forest-800">
+                        404
+                      </h1>
 
-                <p className="mt-3 text-ink-500">
-                  The page you're looking for doesn't exist.
-                </p>
+                      <p className="mt-3 text-ink-600 font-medium">
+                        The page you are looking for doesn't exist.
+                      </p>
 
-                <a
-                  href="/"
-                  className="inline-block mt-6 px-5 py-3 rounded-lg bg-clay-500 text-white font-medium hover:bg-clay-600 transition-colors"
-                >
-                  Go Home
-                </a>
-              </div>
-            </div>
-          }
-        />
-      </Routes>
+                      <Link
+                        to="/"
+                        className="inline-block mt-6 px-6 py-3 rounded-xl bg-forest-700 hover:bg-forest-800 text-white font-semibold transition-all shadow-sm"
+                      >
+                        Return to Home
+                      </Link>
+                    </div>
+                  </div>
+                </PageTransitionWrapper>
+              }
+            />
+          </Routes>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
@@ -80,4 +182,3 @@ function AppLayout() {
 export default function App() {
   return <AppLayout />;
 }
-

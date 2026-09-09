@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -12,6 +12,7 @@ import {
   Activity,
   ShieldAlert,
   RotateCcw,
+  CheckCircle2,
 } from "lucide-react";
 
 import api from "../api/api";
@@ -20,6 +21,9 @@ import {
   getUser,
   saveAuth,
 } from "../utils/auth";
+import FadeContent from "../components/reactbits/FadeContent.jsx";
+import SpotlightCard from "../components/reactbits/SpotlightCard.jsx";
+import CountUp from "../components/reactbits/CountUp.jsx";
 
 const DIETARY_PREFERENCES = [
   "Vegetarian",
@@ -93,8 +97,7 @@ export default function Profile() {
       }
 
       const currentUser = response.data.user;
-      const currentProfile =
-        currentUser.profile || {};
+      const currentProfile = currentUser.profile || {};
 
       setUser(currentUser);
       setProfile(currentProfile);
@@ -105,29 +108,21 @@ export default function Profile() {
         height: currentProfile.height || "",
         weight: currentProfile.weight || "",
         gender: currentProfile.gender || "",
-        dietaryPreferences:
-          currentProfile.dietaryPreferences || "",
-        allergies: currentProfile.allergies || [],
-        healthGoals: currentProfile.healthGoals || [],
+        dietaryPreferences: currentProfile.dietaryPreferences || "",
+        allergies: Array.isArray(currentProfile.allergies)
+          ? currentProfile.allergies
+          : [],
+        healthGoals: Array.isArray(currentProfile.healthGoals)
+          ? currentProfile.healthGoals
+          : [],
         lifestyle: currentProfile.lifestyle || "",
       });
     } catch (err) {
-      console.error(
-        "Profile fetch failed:",
-        err
-      );
-
-      if (err?.response?.status === 401) {
-        navigate("/login", {
-          replace: true,
-        });
-        return;
-      }
-
+      console.error("Profile load error:", err);
       setError(
         getErrorMessage(
           err,
-          "Failed to load your profile."
+          "Failed to load profile. Please refresh."
         )
       );
     } finally {
@@ -139,192 +134,102 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  const handleLogout = () => {
-  clearAuth();
-  navigate("/login");
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    setError("");
-    setSuccess("");
   };
 
   const toggleMulti = (field, value) => {
     setForm((prev) => {
       const current = prev[field] || [];
-
-      const next = current.includes(value)
+      const updated = current.includes(value)
         ? current.filter((item) => item !== value)
         : [...current, value];
 
       return {
         ...prev,
-        [field]: next,
+        [field]: updated,
       };
     });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     setError("");
     setSuccess("");
-  };
 
-  const validateForm = () => {
     if (!form.name.trim()) {
-      return "Name cannot be empty.";
-    }
-
-    if (
-      !form.age ||
-      Number(form.age) <= 0 ||
-      Number(form.age) > 120
-    ) {
-      return "Please enter a valid age.";
-    }
-
-    if (
-      !form.height ||
-      Number(form.height) <= 0
-    ) {
-      return "Please enter a valid height.";
-    }
-
-    if (
-      !form.weight ||
-      Number(form.weight) <= 0
-    ) {
-      return "Please enter a valid weight.";
-    }
-
-    if (!form.gender) {
-      return "Please select your gender.";
-    }
-
-    if (!form.dietaryPreferences) {
-      return "Please select your diet preference.";
-    }
-
-    if (!form.lifestyle) {
-      return "Please select your lifestyle.";
-    }
-
-    if (
-      !Array.isArray(form.healthGoals) ||
-      form.healthGoals.length === 0
-    ) {
-      return "Please select at least one health goal.";
-    }
-
-    return null;
-  };
-
-  const handleSubmit = async () => {
-    const validationError = validateForm();
-
-    if (validationError) {
-      setError(validationError);
+      setError("Name is required");
       return;
     }
 
-    try {
-      setSaving(true);
-      setError("");
-      setSuccess("");
+    if (
+      form.age &&
+      (Number(form.age) < 1 || Number(form.age) > 120)
+    ) {
+      setError("Please enter a valid age between 1 and 120");
+      return;
+    }
 
+    if (
+      form.height &&
+      (Number(form.height) < 50 || Number(form.height) > 300)
+    ) {
+      setError("Please enter a valid height (50 - 300 cm)");
+      return;
+    }
+
+    if (
+      form.weight &&
+      (Number(form.weight) < 20 || Number(form.weight) > 500)
+    ) {
+      setError("Please enter a valid weight (20 - 500 kg)");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
       const payload = {
         name: form.name.trim(),
-        age: Number(form.age),
-        height: Number(form.height),
-        weight: Number(form.weight),
-        gender: form.gender,
-        dietaryPreferences:
-          form.dietaryPreferences,
-        allergies: form.allergies || [],
-        healthGoals: form.healthGoals || [],
-        lifestyle: form.lifestyle,
+        profile: {
+          age: form.age ? Number(form.age) : undefined,
+          height: form.height ? Number(form.height) : undefined,
+          weight: form.weight ? Number(form.weight) : undefined,
+          gender: form.gender || undefined,
+          dietaryPreferences: form.dietaryPreferences || undefined,
+          allergies: form.allergies,
+          healthGoals: form.healthGoals,
+          lifestyle: form.lifestyle || undefined,
+        },
       };
 
-      const response = await api.put(
-        "/auth/profile",
-        payload
-      );
+      const response = await api.put("/auth/profile", payload);
 
-      if (!response.data?.success) {
-        throw new Error(
-          response.data?.message ||
-          "Failed to update profile."
-        );
+      if (!response.data?.success || !response.data?.user) {
+        throw new Error("Update failed");
       }
 
-      const updatedUser =
-        response.data.user;
-
-      const updatedProfile =
-        response.data.profile ||
-        updatedUser?.profile ||
-        {};
-
+      const updatedUser = response.data.user;
       setUser(updatedUser);
-      setProfile(updatedProfile);
+      setProfile(updatedUser.profile || {});
 
-      setForm({
-        name: updatedUser?.name || "",
-        age: updatedProfile.age || "",
-        height: updatedProfile.height || "",
-        weight: updatedProfile.weight || "",
-        gender: updatedProfile.gender || "",
-        dietaryPreferences:
-          updatedProfile.dietaryPreferences ||
-          "",
-        allergies:
-          updatedProfile.allergies || [],
-        healthGoals:
-          updatedProfile.healthGoals || [],
-        lifestyle:
-          updatedProfile.lifestyle || "",
+      saveAuth({
+        user: updatedUser,
       });
 
-      /*
-       * Keep Navbar/auth storage in sync
-       * after changing the user's name/profile.
-       */
-      const oldUser = getUser();
-
-      if (oldUser && updatedUser) {
-        saveAuth({
-          token:
-            localStorage.getItem("token") ||
-            sessionStorage.getItem("token"),
-          user: updatedUser,
-          persist: Boolean(
-            localStorage.getItem("token")
-          ),
-        });
-      }
-
-      window.dispatchEvent(
-        new Event("authChanged")
-      );
-
+      setSuccess("Profile updated successfully!");
       setEditing(false);
-      setSuccess(
-        "Profile updated successfully."
-      );
     } catch (err) {
-      console.error(
-        "Failed to update profile:",
-        err
-      );
-
+      console.error("Profile update error:", err);
       setError(
         getErrorMessage(
           err,
-          "Failed to save your profile. Please try again."
+          "Failed to update profile. Please try again."
         )
       );
     } finally {
@@ -332,19 +237,25 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login");
+  };
+
   const cancelEditing = () => {
-    setForm({
-      name: user?.name || "",
-      age: profile.age || "",
-      height: profile.height || "",
-      weight: profile.weight || "",
-      gender: profile.gender || "",
-      dietaryPreferences:
-        profile.dietaryPreferences || "",
-      allergies: profile.allergies || [],
-      healthGoals: profile.healthGoals || [],
-      lifestyle: profile.lifestyle || "",
-    });
+    if (user) {
+      setForm({
+        name: user.name || "",
+        age: profile.age || "",
+        height: profile.height || "",
+        weight: profile.weight || "",
+        gender: profile.gender || "",
+        dietaryPreferences: profile.dietaryPreferences || "",
+        allergies: profile.allergies || [],
+        healthGoals: profile.healthGoals || [],
+        lifestyle: profile.lifestyle || "",
+      });
+    }
 
     setError("");
     setSuccess("");
@@ -358,7 +269,12 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-forest-600 animate-spin" />
+        <div className="text-center bg-cream-50 p-8 rounded-2xl shadow-sm border border-cream-300">
+          <Loader2 className="w-8 h-8 text-forest-600 animate-spin mx-auto mb-3" />
+          <p className="text-sm font-medium text-ink-600">
+            Loading your profile...
+          </p>
+        </div>
       </div>
     );
   }
@@ -366,498 +282,433 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="min-h-screen bg-cream-100 text-ink-900 flex flex-col items-center justify-center px-4">
-        <AlertTriangle className="w-8 h-8 mb-3 text-yellow-400" />
-
-        <p className="text-ink-600 text-center">
-          Failed to load your profile.
-        </p>
-
-        <button
-          type="button"
-          onClick={fetchProfile}
-          className="mt-4 px-5 py-2 bg-forest-600 hover:bg-forest-700 rounded-xl"
-        >
-          Try Again
-        </button>
+        <div className="bg-cream-50 p-8 rounded-2xl border border-cream-300 text-center max-w-sm">
+          <AlertTriangle className="w-8 h-8 mb-3 text-amber-500 mx-auto" />
+          <p className="text-ink-700 font-medium">
+            Failed to load your profile.
+          </p>
+          <button
+            type="button"
+            onClick={fetchProfile}
+            className="mt-4 px-6 py-2.5 bg-forest-700 hover:bg-forest-800 text-white font-semibold rounded-xl text-sm transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream-100 text-ink-900 pt-28 pb-12">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="bg-cream-50 rounded-2xl shadow-sm border border-forest-100 overflow-hidden">
-          
+    <div className="min-h-screen dietly-page-bg text-ink-900 pt-28 pb-16 px-4">
+      <div className="max-w-4xl mx-auto">
+        <FadeContent delay={0.05}>
+          {/* Notifications */}
+          {error && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-medium shadow-sm">
+              <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
-          {/* MESSAGES */}
-          <div className="px-6">
-            {error && (
-              <div className="mt-5 flex items-start gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+          {success && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-forest-50 border border-forest-200 text-forest-800 rounded-2xl text-sm font-medium shadow-sm">
+              <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
 
-            {success && (
-              <div className="mt-5 p-3 bg-forest-50 border border-forest-200 text-forest-700 rounded-lg text-sm">
-                {success}
-              </div>
-            )}
-          </div>
+          <SpotlightCard
+            className="shadow-sm border-cream-300 overflow-hidden"
+            spotlightColor="rgba(79, 115, 69, 0.1)"
+          >
+            {!editing ? (
+              <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
+                {/* LEFT SIDE */}
+                <div className="p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-cream-200 bg-cream-50/60">
+                  {/* Profile Info */}
+                  <div className="text-center">
+                    <div className="w-20 h-20 rounded-full bg-forest-100 border-2 border-forest-200 text-forest-800 flex items-center justify-center mx-auto mb-4 text-2xl font-bold font-display shadow-sm">
+                      {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                    </div>
 
-          {!editing ? (
+                    <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink-900 tracking-tight">
+                      {user.name || user.email?.split("@")[0]}
+                    </h1>
 
-            <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
-
-              {/* LEFT SIDE */}
-              <div className="p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-forest-100">
-
-                {/* Profile */}
-                <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-forest-100 flex items-center justify-center mx-auto mb-4">
-                    <User className="w-12 h-12 text-forest-600" />
+                    <p className="text-ink-500 text-xs sm:text-sm mt-0.5">
+                      {user.email}
+                    </p>
                   </div>
 
-                  <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-900">
-                    {user.name || user.email?.split("@")[0]}
-                  </h1>
+                  <div className="my-6 border-t border-cream-200" />
 
-                  <p className="text-ink-500 mt-1">
-                    {user.email}
+                  {/* Calorie Goal Card */}
+                  {profile.calorieGoal && (
+                    <div className="p-5 rounded-2xl bg-forest-50/80 border border-forest-200/80 text-center mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-forest-100 flex items-center justify-center mx-auto mb-2.5 text-forest-700">
+                        <Activity className="w-5 h-5" />
+                      </div>
+
+                      <p className="text-forest-800 text-xs font-semibold uppercase tracking-wider">
+                        Estimated Daily Calorie Target
+                      </p>
+
+                      <p className="text-3xl font-bold text-ink-900 mt-1.5">
+                        <CountUp
+                          to={profile.calorieGoalOverride || profile.calorieGoal}
+                          duration={1.2}
+                        />{" "}
+                        <span className="text-base font-normal text-ink-500">
+                          kcal
+                        </span>
+                      </p>
+
+                      <p className="text-[11px] text-forest-600 mt-1.5">
+                        Personalized estimate based on your goals and biometrics.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="w-full bg-forest-700 hover:bg-forest-800 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm text-sm"
+                    >
+                      Edit Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={redoQuestionnaire}
+                      className="w-full bg-cream-100 hover:bg-cream-200 border border-cream-300 text-forest-800 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Retake Questionnaire</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full bg-cream-50 hover:bg-clay-50 border border-clay-200 text-clay-700 font-semibold py-3 rounded-xl transition-colors text-sm"
+                    >
+                      Log Out
+                    </button>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="p-6 sm:p-8">
+                  <h2 className="font-display text-xl font-bold text-ink-900 mb-6">
+                    Biometrics & Preferences
+                  </h2>
+
+                  <div className="divide-y divide-cream-200 text-sm">
+                    {/* Height */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-forest-700">
+                        <Ruler className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Height:{" "}
+                        <strong className="text-ink-900">
+                          {profile.height ? `${profile.height} cm` : "Not specified"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Weight */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-forest-700">
+                        <Scale className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Weight:{" "}
+                        <strong className="text-ink-900">
+                          {profile.weight ? `${profile.weight} kg` : "Not specified"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Age */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-forest-700">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Age:{" "}
+                        <strong className="text-ink-900">
+                          {profile.age || "Not specified"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Lifestyle */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-forest-700">
+                        <Activity className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Activity Level:{" "}
+                        <strong className="text-ink-900">
+                          {profile.lifestyle || "Not specified"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Goals */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-clay-600">
+                        <Target className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Health Goals:{" "}
+                        <strong className="text-ink-900">
+                          {profile.healthGoals?.join(", ") || "Balanced Diet"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Diet */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-forest-700">
+                        <Apple className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Diet Preference:{" "}
+                        <strong className="text-ink-900">
+                          {profile.dietaryPreferences || "Standard"}
+                        </strong>
+                      </p>
+                    </div>
+
+                    {/* Allergies */}
+                    <div className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0 text-amber-600">
+                        <ShieldAlert className="w-5 h-5" />
+                      </div>
+                      <p className="text-ink-600">
+                        Allergies:{" "}
+                        <strong className="text-ink-900">
+                          {profile.allergies?.length
+                            ? profile.allergies.join(", ")
+                            : "None reported"}
+                        </strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* EDIT FORM */
+              <div className="p-6 sm:p-8 space-y-6">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-ink-900">
+                    Edit Profile Details
+                  </h2>
+                  <p className="text-xs sm:text-sm text-ink-500 mt-1">
+                    Keep your biometrics and dietary preferences up to date.
                   </p>
                 </div>
 
-                <div className="my-7 border-t border-forest-100" />
+                {/* Name */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                  />
+                </div>
 
-                {/* Calorie Goal */}
-                {profile.calorieGoal && (
-                  <div className="p-5 rounded-2xl bg-forest-50 border border-forest-200 text-center">
-                    <div className="w-12 h-12 rounded-full bg-forest-100 flex items-center justify-center mx-auto mb-3">
-                      <Activity className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-forest-700 font-semibold">
-                      Estimated daily calorie goal
-                    </p>
-
-                    <p className="text-3xl font-bold text-ink-900 mt-2">
-                      {profile.calorieGoalOverride || profile.calorieGoal} kcal
-                    </p>
-
-                    <p className="text-xs text-forest-600 mt-2">
-                      This is an estimate based on your profile, not medical advice.
-                    </p>
+                {/* Age, Height, Weight */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Age
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="120"
+                      name="age"
+                      value={form.age}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    />
                   </div>
-                )}
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Height (cm)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      name="height"
+                      value={form.height}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      name="weight"
+                      value={form.weight}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Gender, Diet, Lifestyle */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Gender
+                    </label>
+                    <select
+                      name="gender"
+                      value={form.gender}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Diet Preference
+                    </label>
+                    <select
+                      name="dietaryPreferences"
+                      value={form.dietaryPreferences}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    >
+                      <option value="">Select diet</option>
+                      {DIETARY_PREFERENCES.map((diet) => (
+                        <option key={diet} value={diet}>
+                          {diet}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                      Lifestyle Activity
+                    </label>
+                    <select
+                      name="lifestyle"
+                      value={form.lifestyle}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-xl bg-cream-100 border border-cream-300 text-ink-900 outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 text-sm"
+                    >
+                      <option value="">Select lifestyle</option>
+                      {LIFESTYLES.map((lifestyle) => (
+                        <option key={lifestyle} value={lifestyle}>
+                          {lifestyle}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Allergies Multi-select */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink-700 mb-2">
+                    Allergies
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ALLERGIES.map((allergy) => {
+                      const selected = (form.allergies || []).includes(allergy);
+                      return (
+                        <button
+                          type="button"
+                          key={allergy}
+                          onClick={() => toggleMulti("allergies", allergy)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            selected
+                              ? "bg-clay-500 border-clay-600 text-white shadow-sm"
+                              : "bg-cream-100 border-cream-300 text-ink-700 hover:border-forest-300"
+                          }`}
+                        >
+                          {allergy}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Health Goals Multi-select */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink-700 mb-2">
+                    Health Goals
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {HEALTH_GOALS.map((goal) => {
+                      const selected = (form.healthGoals || []).includes(goal);
+                      return (
+                        <button
+                          type="button"
+                          key={goal}
+                          onClick={() => toggleMulti("healthGoals", goal)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            selected
+                              ? "bg-forest-700 border-forest-800 text-white shadow-sm"
+                              : "bg-cream-100 border-cream-300 text-ink-700 hover:border-forest-300"
+                          }`}
+                        >
+                          {goal}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Actions */}
-                <div className="mt-6 space-y-3">
-
+                <div className="flex gap-3 pt-4 border-t border-cream-200">
                   <button
                     type="button"
-                    onClick={() => setEditing(true)}
-                    className="w-full bg-forest-600 hover:bg-forest-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                    className="flex-1 bg-forest-700 hover:bg-forest-800 text-white py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 font-semibold text-sm shadow-sm transition-colors"
                   >
-                    Edit Profile
+                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>{saving ? "Saving Changes..." : "Save Profile"}</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={redoQuestionnaire}
-                    className="w-full bg-cream-50 hover:bg-forest-50 border border-forest-300 text-forest-700 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                    className="flex-1 bg-cream-100 hover:bg-cream-200 border border-cream-300 text-ink-700 py-3 rounded-xl disabled:opacity-50 font-semibold text-sm transition-colors"
                   >
-                    <RotateCcw className="w-5 h-5" />
-                    Redo Questionnaire
+                    Cancel
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3.5 rounded-xl transition-colors"
-                  >
-                    Logout
-                  </button>
-
                 </div>
               </div>
-
-              {/* RIGHT SIDE */}
-              <div className="p-6 sm:p-8">
-
-                <h2 className="font-display text-xl font-semibold text-ink-900 mb-5">
-                  Your Profile
-                </h2>
-
-                <div className="space-y-0">
-
-                  {/* Height */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Ruler className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Height:{" "}
-                      <strong className="text-ink-900">
-                        {profile.height || "-"} cm
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Weight */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Scale className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Weight:{" "}
-                      <strong className="text-ink-900">
-                        {profile.weight || "-"} kg
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Age */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Age:{" "}
-                      <strong className="text-ink-900">
-                        {profile.age || "-"}
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Lifestyle */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Activity className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Lifestyle:{" "}
-                      <strong className="text-ink-900">
-                        {profile.lifestyle || "-"}
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Goals */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Target className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Goals:{" "}
-                      <strong className="text-ink-900">
-                        {profile.healthGoals?.join(", ") || "-"}
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Diet */}
-                  <div className="flex items-center gap-4 py-4 border-b border-forest-100">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <Apple className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Diet:{" "}
-                      <strong className="text-ink-900">
-                        {profile.dietaryPreferences || "-"}
-                      </strong>
-                    </p>
-                  </div>
-
-                  {/* Allergies */}
-                  <div className="flex items-center gap-4 py-4">
-                    <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
-                      <ShieldAlert className="w-6 h-6 text-forest-600" />
-                    </div>
-
-                    <p className="text-ink-600">
-                      Allergies:{" "}
-                      <strong className="text-ink-900">
-                        {profile.allergies?.length
-                          ? profile.allergies.join(", ")
-                          : "None"}
-                      </strong>
-                    </p>
-                  </div>
-
-                </div>
-              </div>
-
-            </div>
-          ) : (
-              <div className = "p-6 space-y-5">
-              {/* NAME */ }
-              <div>
-            <label className="block text-sm font-semibold text-ink-400 mb-2">
-              Full Name
-            </label>
-
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-            />
-          </div>
-
-          {/* BASIC INFO */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs text-ink-400 mb-1">
-                Age
-              </label>
-
-              <input
-                type="number"
-                min="1"
-                max="120"
-                name="age"
-                value={form.age}
-                onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-ink-400 mb-1">
-                Height (cm)
-              </label>
-
-              <input
-                type="number"
-                min="1"
-                name="height"
-                value={form.height}
-                onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-ink-400 mb-1">
-                Weight (kg)
-              </label>
-
-              <input
-                type="number"
-                min="1"
-                name="weight"
-                value={form.weight}
-                onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-              />
-            </div>
-          </div>
-
-          {/* GENDER */}
-          <div>
-            <label className="block text-sm font-semibold text-ink-400 mb-2">
-              Gender
-            </label>
-
-            <select
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-            >
-              <option value="">
-                Select gender
-              </option>
-
-              <option value="Male">
-                Male
-              </option>
-
-              <option value="Female">
-                Female
-              </option>
-
-              <option value="Other">
-                Other
-              </option>
-            </select>
-          </div>
-
-          {/* DIET */}
-          <div>
-            <label className="block text-sm font-semibold text-ink-400 mb-2">
-              Diet Preference
-            </label>
-
-            <select
-              name="dietaryPreferences"
-              value={
-                form.dietaryPreferences
-              }
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-            >
-              <option value="">
-                Select one
-              </option>
-
-              {DIETARY_PREFERENCES.map(
-                (diet) => (
-                  <option
-                    key={diet}
-                    value={diet}
-                  >
-                    {diet}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-
-          {/* LIFESTYLE */}
-          <div>
-            <label className="block text-sm font-semibold text-ink-400 mb-2">
-              Lifestyle
-            </label>
-
-            <select
-              name="lifestyle"
-              value={form.lifestyle}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-ink-700 border border-ink-600 text-ink-900 outline-none focus:border-forest-400"
-            >
-              <option value="">
-                Select one
-              </option>
-
-              {LIFESTYLES.map(
-                (lifestyle) => (
-                  <option
-                    key={lifestyle}
-                    value={lifestyle}
-                  >
-                    {lifestyle}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-
-          {/* ALLERGIES */}
-          <div>
-            <p className="text-sm font-semibold text-ink-400 mb-2">
-              Allergies
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              {ALLERGIES.map(
-                (allergy) => {
-                  const selected =
-                    (
-                      form.allergies ||
-                      []
-                    ).includes(allergy);
-
-                  return (
-                    <button
-                      type="button"
-                      key={allergy}
-                      onClick={() =>
-                        toggleMulti(
-                          "allergies",
-                          allergy
-                        )
-                      }
-                      className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
-                          ? "bg-red-500 border-red-400 text-ink-900"
-                          : "bg-ink-700 border-ink-600 text-ink-400 hover:border-ink-400"
-                        }`}
-                    >
-                      {allergy}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </div>
-
-          {/* GOALS */}
-          <div>
-            <p className="text-sm font-semibold text-ink-400 mb-2">
-              Health Goals
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              {HEALTH_GOALS.map(
-                (goal) => {
-                  const selected =
-                    (
-                      form.healthGoals ||
-                      []
-                    ).includes(goal);
-
-                  return (
-                    <button
-                      type="button"
-                      key={goal}
-                      onClick={() =>
-                        toggleMulti(
-                          "healthGoals",
-                          goal
-                        )
-                      }
-                      className={`px-3 py-2 rounded-full text-sm border transition-colors ${selected
-                          ? "bg-forest-500 border-forest-400 text-ink-900"
-                          : "bg-ink-700 border-ink-600 text-ink-400 hover:border-ink-400"
-                        }`}
-                    >
-                      {goal}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </div>
-
-          {/* SAVE/CANCEL */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving}
-              className="flex-1 bg-forest-600 hover:bg-forest-700 py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 font-semibold shadow-md"
-            >
-              {saving && (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              )}
-
-              {saving
-                ? "Saving..."
-                : "Save Changes"}
-            </button>
-
-            <button
-              type="button"
-              onClick={cancelEditing}
-              disabled={saving}
-              className="flex-1 bg-cream-50 hover:bg-cream-100 border border-cream-300 text-ink-700 py-3 rounded-xl disabled:opacity-50 font-semibold"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-          )}
-
-        
+            )}
+          </SpotlightCard>
+        </FadeContent>
       </div>
     </div>
-    </div >
   );
 }

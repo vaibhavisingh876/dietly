@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   X,
@@ -8,8 +8,14 @@ import {
   Utensils,
   Sparkles,
   Search,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import api from "../api/api";
+import FadeContent from "../components/reactbits/FadeContent.jsx";
+import SpotlightCard from "../components/reactbits/SpotlightCard.jsx";
+import CountUp from "../components/reactbits/CountUp.jsx";
 
 const EMPTY_ITEM = {
   name: "",
@@ -48,7 +54,6 @@ export default function PantryPage() {
       setError("");
 
       const response = await api.get("/pantry/");
-
       const pantryData = response.data?.pantry || {
         kitchen: [],
         fridge: [],
@@ -57,26 +62,24 @@ export default function PantryPage() {
       const allItems = [
         ...(Array.isArray(pantryData.kitchen)
           ? pantryData.kitchen.map((item) => ({
-            ...item,
-            category: "kitchen",
-          }))
+              ...item,
+              category: "kitchen",
+            }))
           : []),
-
         ...(Array.isArray(pantryData.fridge)
           ? pantryData.fridge.map((item) => ({
-            ...item,
-            category: "fridge",
-          }))
+              ...item,
+              category: "fridge",
+            }))
           : []),
       ];
 
       setItems(allItems);
     } catch (error) {
       console.error("Error loading pantry:", error);
-
       setError(
         error.response?.data?.error ||
-        "Unable to load your pantry. Please try again."
+          "Unable to load your pantry. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -122,29 +125,34 @@ export default function PantryPage() {
         ],
       });
 
-      const backendItem = response.data?.items?.[0];
+      const responseCategory = response.data?.pantry?.[newItem.category];
 
-      if (backendItem) {
-        setItems((prev) => [
-          ...prev,
-          {
-            ...backendItem,
-            category: newItem.category,
-          },
-        ]);
+      if (Array.isArray(responseCategory)) {
+        const addedItem = responseCategory[responseCategory.length - 1];
+
+        if (addedItem?._id) {
+          setItems((prev) => [
+            ...prev,
+            {
+              ...addedItem,
+              category: newItem.category,
+            },
+          ]);
+        } else {
+          await loadItems();
+        }
       } else {
         await loadItems();
       }
 
       setNewItem(EMPTY_ITEM);
       setShowAddForm(false);
-      setSuccessMessage(`${name} added to your pantry.`);
+      setSuccessMessage("Item added to your pantry.");
     } catch (error) {
-      console.error("Error adding pantry item:", error);
-
+      console.error("Error adding item:", error);
       setError(
         error.response?.data?.error ||
-        "Unable to add the item. Please try again."
+          "Unable to add the item. Please try again."
       );
     } finally {
       setIsAdding(false);
@@ -153,22 +161,18 @@ export default function PantryPage() {
 
   const deleteItem = async (id) => {
     if (!id) return;
-
     clearMessages();
 
     try {
       setDeletingId(id);
-
       await api.delete(`/pantry/${id}`);
-
       setItems((prev) => prev.filter((item) => item._id !== id));
       setSuccessMessage("Item removed from your pantry.");
     } catch (error) {
       console.error("Error deleting item:", error);
-
       setError(
         error.response?.data?.error ||
-        "Unable to remove the item. Please try again."
+          "Unable to remove the item. Please try again."
       );
     } finally {
       setDeletingId(null);
@@ -188,7 +192,6 @@ export default function PantryPage() {
       setSuggestedMeals([]);
 
       const response = await api.post("/pantry/suggest-recipes");
-
       const data = response.data;
 
       if (data.success && Array.isArray(data.recipes)) {
@@ -206,13 +209,11 @@ export default function PantryPage() {
       }
     } catch (error) {
       console.error("Error generating AI meals:", error);
-
       setSuggestedMeals([]);
-
       setError(
         error.response?.data?.error ||
-        error.message ||
-        "Unable to generate meal suggestions. Please try again."
+          error.message ||
+          "Unable to generate meal suggestions. Please try again."
       );
     } finally {
       setIsGenerating(false);
@@ -221,9 +222,7 @@ export default function PantryPage() {
 
   const filteredItems = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-
     if (!query) return items;
-
     return items.filter((item) =>
       String(item.name || "").toLowerCase().includes(query)
     );
@@ -237,7 +236,6 @@ export default function PantryPage() {
         } else {
           acc.kitchen.push(item);
         }
-
         return acc;
       },
       {
@@ -254,17 +252,17 @@ export default function PantryPage() {
       return (
         <div className="text-center py-12">
           <div className="w-8 h-8 border-4 border-forest-200 border-t-forest-600 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-ink-400">Loading items...</p>
+          <p className="text-ink-400 text-sm">Loading items...</p>
         </div>
       );
     }
 
     if (categoryItems.length === 0) {
       return (
-        <div className="text-center py-12">
+        <div className="text-center py-12 text-ink-400">
           {emptyIcon}
-          <p className="text-ink-400">
-            {searchTerm ? "No matching items" : "No items yet"}
+          <p className="text-sm mt-2">
+            {searchTerm ? "No matching ingredients found" : "No items logged yet"}
           </p>
         </div>
       );
@@ -273,14 +271,13 @@ export default function PantryPage() {
     return categoryItems.map((item) => (
       <div
         key={item._id}
-        className="flex items-center justify-between p-4 rounded-xl bg-cream-50 border-2 border-forest-100 hover:border-forest-300 transition-all shadow-sm hover:shadow-md"
+        className="flex items-center justify-between p-3.5 rounded-xl bg-cream-100/70 border border-cream-200 hover:border-forest-200 hover:bg-cream-100 transition-all shadow-sm"
       >
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-ink-800 text-lg break-words">
+        <div className="flex-1 min-w-0 pr-3">
+          <p className="font-semibold text-ink-800 text-sm sm:text-base truncate">
             {item.name}
           </p>
-
-          <p className="text-sm text-ink-500 break-words">
+          <p className="text-xs text-ink-500 truncate mt-0.5">
             {item.quantity}
           </p>
         </div>
@@ -290,12 +287,12 @@ export default function PantryPage() {
           onClick={() => deleteItem(item._id)}
           disabled={deletingId === item._id}
           aria-label={`Remove ${item.name}`}
-          className="text-red-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-ink-400 hover:text-clay-600 p-2 hover:bg-clay-50 rounded-lg transition-colors disabled:opacity-50"
         >
           {deletingId === item._id ? (
-            <div className="w-5 h-5 border-2 border-red-200 border-t-red-600 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-clay-200 border-t-clay-600 rounded-full animate-spin" />
           ) : (
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-4 h-4" />
           )}
         </button>
       </div>
@@ -303,333 +300,351 @@ export default function PantryPage() {
   };
 
   return (
-    <div className="min-h-screen dietly-page-bg pt-28">
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-
-        {/* Hero */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center gap-3 mb-4 bg-cream-50 px-8 py-4 rounded-2xl shadow-lg">
-            <ChefHat className="w-12 h-12 text-forest-600" />
-
-            <h1 className="font-display text-5xl font-semibold text-forest-700">
-              Smart Pantry
-            </h1>
+    <div className="min-h-screen dietly-page-bg px-4 sm:px-6 lg:px-8 pt-28 pb-16">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <FadeContent delay={0.05}>
+          <div className="mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-forest-100 text-forest-700">
+                <ChefHat className="w-7 h-7" />
+              </div>
+              <div>
+                <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink-900 tracking-tight">
+                  Smart Pantry & Kitchen
+                </h1>
+                <p className="text-ink-600 text-sm sm:text-base mt-0.5">
+                  Keep track of what's in stock and generate AI recipes from your available ingredients.
+                </p>
+              </div>
+            </div>
           </div>
+        </FadeContent>
 
-          <p className="text-lg text-ink-600 max-w-2xl mx-auto">
-            Track your ingredients and discover AI-generated meals you can
-            cook right now.
-          </p>
-        </div>
+        {/* Alerts */}
+        {error && (
+          <FadeContent delay={0.05}>
+            <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 shadow-sm text-sm font-medium">
+              <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          </FadeContent>
+        )}
 
-        {/* Global messages */}
-        {(error || successMessage) && (
-          <div className="max-w-3xl mx-auto mb-8">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 flex items-start justify-between gap-4">
-                <p className="text-sm">{error}</p>
+        {successMessage && (
+          <FadeContent delay={0.05}>
+            <div className="mb-6 flex items-start gap-3 bg-forest-50 border border-forest-200 text-forest-800 rounded-2xl p-4 shadow-sm text-sm font-medium">
+              <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+              <p>{successMessage}</p>
+            </div>
+          </FadeContent>
+        )}
+
+        {/* Stats & Top Action Bar */}
+        <FadeContent delay={0.1}>
+          <SpotlightCard
+            className="p-6 sm:p-7 mb-8 shadow-sm border-cream-300"
+            spotlightColor="rgba(79, 115, 69, 0.12)"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="grid grid-cols-3 gap-4 sm:gap-8">
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-forest-700">
+                    <CountUp to={items.length} duration={1} />
+                  </p>
+                  <p className="text-xs sm:text-sm font-medium text-ink-500 mt-0.5">
+                    Total Items
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-forest-600">
+                    <CountUp to={groupedItems.kitchen.length} duration={1} />
+                  </p>
+                  <p className="text-xs sm:text-sm font-medium text-ink-500 mt-0.5">
+                    In Kitchen
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-teal-600">
+                    <CountUp to={groupedItems.fridge.length} duration={1} />
+                  </p>
+                  <p className="text-xs sm:text-sm font-medium text-ink-500 mt-0.5">
+                    In Fridge
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearMessages();
+                    setShowAddForm((prev) => !prev);
+                  }}
+                  className="flex items-center gap-2 bg-forest-700 hover:bg-forest-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{showAddForm ? "Close Form" : "Add Item"}</span>
+                </button>
 
                 <button
                   type="button"
-                  onClick={() => setError("")}
-                  className="text-red-400 hover:text-red-600"
-                  aria-label="Dismiss error"
+                  onClick={generateMealSuggestions}
+                  disabled={items.length === 0 || isGenerating || isLoading}
+                  className="flex items-center gap-2 bg-clay-500 hover:bg-clay-600 active:bg-clay-700 disabled:bg-clay-300 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{isGenerating ? "Generating Recipes..." : "Suggest Meals"}</span>
+                </button>
+              </div>
+            </div>
+          </SpotlightCard>
+        </FadeContent>
+
+        {/* Add Item Form */}
+        {showAddForm && (
+          <FadeContent delay={0.05}>
+            <SpotlightCard
+              className="p-6 sm:p-7 mb-8 shadow-md border-forest-300"
+              spotlightColor="rgba(79, 115, 69, 0.15)"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-display text-xl font-bold text-ink-900">
+                  Add Ingredient to Pantry
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    clearMessages();
+                  }}
+                  className="text-ink-400 hover:text-ink-700 p-1 rounded-lg"
+                  aria-label="Close form"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-            )}
 
-            {!error && successMessage && (
-              <div className="bg-forest-50 border border-forest-200 text-forest-700 rounded-xl px-5 py-4">
-                <p className="text-sm">{successMessage}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-5">
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Ingredient name (e.g. Sourdough bread)"
+                  value={newItem.name}
+                  onChange={(e) =>
+                    setNewItem((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  className="border border-cream-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 bg-cream-100/60 transition-colors"
+                />
+
+                <select
+                  value={newItem.category}
+                  onChange={(e) =>
+                    setNewItem((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
+                  className="border border-cream-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 bg-cream-100/60 transition-colors"
+                >
+                  <option value="kitchen">🍳 Kitchen / Dry Pantry</option>
+                  <option value="fridge">❄️ Refrigerator / Chilled</option>
+                </select>
+
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Quantity (e.g. 500g, 2 cans)"
+                  value={newItem.quantity}
+                  onChange={(e) =>
+                    setNewItem((prev) => ({
+                      ...prev,
+                      quantity: e.target.value,
+                    }))
+                  }
+                  className="border border-cream-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 bg-cream-100/60 transition-colors"
+                />
               </div>
-            )}
-          </div>
+
+              <button
+                type="button"
+                onClick={addItem}
+                disabled={isAdding}
+                className="w-full sm:w-auto px-8 py-3 bg-forest-700 hover:bg-forest-800 disabled:bg-forest-300 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm"
+              >
+                {isAdding ? "Adding Item..." : "Save to Inventory"}
+              </button>
+            </SpotlightCard>
+          </FadeContent>
         )}
 
-        {/* Stats & Actions */}
-        <div className="bg-cream-50 rounded-2xl shadow-sm p-6 mb-8 border border-forest-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex gap-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-forest-600">
-                  {items.length}
-                </p>
-                <p className="text-sm text-ink-600">Total Items</p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-3xl font-bold text-forest-600">
-                  {groupedItems.kitchen.length}
-                </p>
-                <p className="text-sm text-ink-600">Kitchen</p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-3xl font-bold text-teal-600">
-                  {groupedItems.fridge.length}
-                </p>
-                <p className="text-sm text-ink-600">Fridge</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  clearMessages();
-                  setShowAddForm((prev) => !prev);
-                }}
-                className="flex items-center gap-2 bg-forest-600 text-white px-6 py-3 rounded-lg hover:bg-forest-700 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                Add Item
-              </button>
-
-              <button
-                type="button"
-                onClick={generateMealSuggestions}
-                disabled={items.length === 0 || isGenerating || isLoading}
-                className="flex items-center gap-2 bg-clay-500 text-white px-6 py-3 rounded-lg hover:bg-clay-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Sparkles className="w-5 h-5" />
-                {isGenerating ? "Generating..." : "Suggest Meals"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Add Item Form */}
-        {showAddForm && (
-          <div className="bg-cream-50 rounded-2xl shadow-md p-8 mb-8 border-2 border-forest-200 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-display text-2xl font-semibold text-ink-800">
-                Add New Item
-              </h3>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  clearMessages();
-                }}
-                className="text-ink-400 hover:text-ink-600"
-                aria-label="Close add item form"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <input
-                type="text"
-                maxLength={100}
-                placeholder="Item name (e.g., Eggs)"
-                value={newItem.name}
-                onChange={(e) =>
-                  setNewItem((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="border-2 border-cream-300 rounded-xl px-4 py-3 focus:outline-none focus:border-forest-500 transition-colors"
-              />
-
-              <select
-                value={newItem.category}
-                onChange={(e) =>
-                  setNewItem((prev) => ({
-                    ...prev,
-                    category: e.target.value,
-                  }))
-                }
-                className="border-2 border-cream-300 rounded-xl px-4 py-3 focus:outline-none focus:border-forest-500 transition-colors bg-cream-50"
-              >
-                <option value="kitchen">🍳 Kitchen</option>
-                <option value="fridge">❄️ Refrigerator</option>
-              </select>
-
-              <input
-                type="text"
-                maxLength={100}
-                placeholder="Quantity (e.g., 12 pieces)"
-                value={newItem.quantity}
-                onChange={(e) =>
-                  setNewItem((prev) => ({
-                    ...prev,
-                    quantity: e.target.value,
-                  }))
-                }
-                className="border-2 border-cream-300 rounded-xl px-4 py-3 focus:outline-none focus:border-forest-500 transition-colors"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={addItem}
-              disabled={isAdding}
-              className="w-full bg-forest-600 text-white px-6 py-4 rounded-lg hover:bg-forest-700 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAdding ? "Adding..." : "Add to Pantry"}
-            </button>
-          </div>
-        )}
-
-        {/* Search */}
+        {/* Search Bar */}
         {items.length > 0 && (
           <div className="mb-8">
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-ink-400 w-5 h-5" />
-
+            <div className="relative max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search items..."
+                placeholder="Search pantry ingredients..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border-2 border-cream-300 rounded-xl focus:outline-none focus:border-forest-500 transition-colors bg-cream-50 shadow-md"
+                className="w-full pl-10 pr-4 py-2.5 border border-cream-300 rounded-xl focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-100 bg-cream-50 text-sm shadow-sm transition-colors"
               />
             </div>
           </div>
         )}
 
-        {/* AI Suggestions */}
-        {Array.isArray(suggestedMeals) &&
-          suggestedMeals.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <h2 className="font-display text-3xl font-semibold text-ink-800 flex items-center gap-3">
-                  <Sparkles className="w-8 h-8 text-amber-500" />
-                  AI-Generated Meals & Recipes
-                </h2>
+        {/* AI Suggested Meals */}
+        {Array.isArray(suggestedMeals) && suggestedMeals.length > 0 && (
+          <FadeContent delay={0.1}>
+            <div className="mb-10">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-ink-900">
+                    AI Recipe Suggestions
+                  </h2>
+                </div>
 
                 <button
                   type="button"
                   onClick={() => setSuggestedMeals([])}
-                  className="text-sm text-ink-500 hover:text-ink-700"
+                  className="text-xs font-semibold text-ink-500 hover:text-ink-800 bg-cream-100 px-3 py-1.5 rounded-lg border border-cream-200 transition-colors"
                 >
-                  Clear
+                  Clear Recipes
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {suggestedMeals.map((meal, idx) => (
-                  <div
+                  <SpotlightCard
                     key={`${meal.name || "meal"}-${idx}`}
-                    className="bg-cream-50 rounded-2xl shadow-sm p-6 border-2 border-amber-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl hover:border-amber-200"
+                    className="p-6 border-amber-200/80 bg-cream-50/95 shadow-sm"
+                    spotlightColor="rgba(193, 80, 46, 0.12)"
                   >
-                    <div className="flex items-start justify-between mb-3 gap-3">
-                      <h3 className="font-display text-xl font-semibold text-ink-800">
-                        {meal.name || "Unnamed Meal"}
+                    <div className="flex items-start justify-between mb-3 gap-2">
+                      <h3 className="font-display text-lg font-bold text-ink-900">
+                        {meal.name || "Custom Recipe"}
                       </h3>
-
-                      <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                        {meal.difficulty || "N/A"}
-                      </span>
+                      {meal.difficulty && (
+                        <span className="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-xs font-semibold shrink-0">
+                          {meal.difficulty}
+                        </span>
+                      )}
                     </div>
 
-                    <p className="text-sm text-amber-600 mb-3">
-                      🕐 {meal.cookTime || "N/A"}
-                    </p>
+                    {meal.cookTime && (
+                      <div className="flex items-center gap-1.5 text-xs text-clay-600 mb-4 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{meal.cookTime}</span>
+                      </div>
+                    )}
 
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold text-ink-700">
-                        Ingredients:
-                      </p>
-
-                      <div className="space-y-1">
-                        {Array.isArray(meal.ingredients) &&
-                          meal.ingredients.length > 0 ? (
-                          meal.ingredients.map((ingredient, i) => (
-                            <p
-                              key={i}
-                              className="text-sm text-ink-600 bg-cream-50 px-3 py-1 rounded-lg"
-                            >
-                              ✓ {ingredient}
-                            </p>
-                          ))
-                        ) : (
-                          <p className="text-sm text-ink-400">
-                            No ingredients listed
-                          </p>
-                        )}
+                    <div className="space-y-3 text-xs sm:text-sm">
+                      <div>
+                        <p className="font-semibold text-ink-700 mb-1.5">
+                          Ingredients:
+                        </p>
+                        <div className="space-y-1">
+                          {Array.isArray(meal.ingredients) && meal.ingredients.length > 0 ? (
+                            meal.ingredients.map((ing, i) => (
+                              <p key={i} className="text-ink-600 bg-cream-100/80 px-2.5 py-1 rounded-md">
+                                • {ing}
+                              </p>
+                            ))
+                          ) : (
+                            <p className="text-ink-400">Pantry essentials</p>
+                          )}
+                        </div>
                       </div>
 
-                      <p className="text-sm font-semibold text-ink-700 mt-3">
-                        Recipe:
-                      </p>
-
-                      <p className="text-sm text-ink-600 whitespace-pre-line">
-                        {meal.recipe || "No recipe available"}
-                      </p>
+                      {meal.recipe && (
+                        <div className="border-t border-cream-200 pt-3">
+                          <p className="font-semibold text-ink-700 mb-1">
+                            Preparation:
+                          </p>
+                          <p className="text-ink-600 leading-relaxed text-xs">
+                            {meal.recipe}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </SpotlightCard>
                 ))}
               </div>
             </div>
-          )}
+          </FadeContent>
+        )}
 
-        {/* Pantry Items */}
+        {/* Pantry Columns (Kitchen & Refrigerator) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
           {/* Kitchen */}
-          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-forest-100 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-forest-100 p-3 rounded-xl">
-                <Utensils className="w-7 h-7 text-forest-600" />
+          <FadeContent delay={0.15}>
+            <SpotlightCard
+              className="p-6 sm:p-7 border-cream-300 shadow-sm"
+              spotlightColor="rgba(79, 115, 69, 0.1)"
+            >
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-cream-200">
+                <div className="bg-forest-100 p-2.5 rounded-xl text-forest-700">
+                  <Utensils className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-display text-xl font-bold text-ink-900">
+                    Kitchen & Dry Goods
+                  </h2>
+                  <p className="text-xs text-ink-500">
+                    Spices, grains, pantry staples
+                  </p>
+                </div>
+                <span className="bg-forest-100 text-forest-800 px-3 py-1 rounded-full text-sm font-bold">
+                  {groupedItems.kitchen.length}
+                </span>
               </div>
 
-              <div className="flex-1">
-                <h2 className="font-display text-2xl font-semibold text-ink-800">
-                  Kitchen
-                </h2>
-                <p className="text-sm text-ink-500">
-                  Pantry essentials
-                </p>
+              <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                {renderItemList(
+                  "kitchen",
+                  <Utensils className="w-10 h-10 text-ink-300 mx-auto" />
+                )}
               </div>
-
-              <span className="bg-forest-100 text-forest-700 px-4 py-2 rounded-full text-lg font-bold">
-                {groupedItems.kitchen.length}
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {renderItemList(
-                "kitchen",
-                <Utensils className="w-16 h-16 text-ink-400 mx-auto mb-3" />
-              )}
-            </div>
-          </div>
+            </SpotlightCard>
+          </FadeContent>
 
           {/* Refrigerator */}
-          <div className="bg-cream-50 rounded-2xl shadow-sm p-8 border-2 border-cream-200 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] hover:shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-cream-200 p-3 rounded-xl">
-                <Refrigerator className="w-7 h-7 text-teal-600" />
+          <FadeContent delay={0.2}>
+            <SpotlightCard
+              className="p-6 sm:p-7 border-cream-300 shadow-sm"
+              spotlightColor="rgba(79, 115, 69, 0.1)"
+            >
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-cream-200">
+                <div className="bg-teal-100/80 p-2.5 rounded-xl text-teal-700">
+                  <Refrigerator className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-display text-xl font-bold text-ink-900">
+                    Refrigerator & Chilled
+                  </h2>
+                  <p className="text-xs text-ink-500">
+                    Produce, dairy, proteins
+                  </p>
+                </div>
+                <span className="bg-teal-100/80 text-teal-800 px-3 py-1 rounded-full text-sm font-bold">
+                  {groupedItems.fridge.length}
+                </span>
               </div>
 
-              <div className="flex-1">
-                <h2 className="font-display text-2xl font-semibold text-ink-800">
-                  Refrigerator
-                </h2>
-
-                <p className="text-sm text-ink-500">
-                  Fresh & cold items
-                </p>
+              <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                {renderItemList(
+                  "fridge",
+                  <Refrigerator className="w-10 h-10 text-ink-300 mx-auto" />
+                )}
               </div>
-
-              <span className="bg-cream-200 text-forest-700 px-4 py-2 rounded-full text-lg font-bold">
-                {groupedItems.fridge.length}
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {renderItemList(
-                "fridge",
-                <Refrigerator className="w-16 h-16 text-ink-400 mx-auto mb-3" />
-              )}
-            </div>
-          </div>
+            </SpotlightCard>
+          </FadeContent>
         </div>
       </div>
     </div>
